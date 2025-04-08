@@ -15,10 +15,9 @@ int main() {
     cout << "Hello, World!" << endl;
     // Vector2Test();
 
-    TDT4102::Point start_point{200, 300};
-
+    TDT4102::Point start_point{50, 50};
     SimulationWindow sw{start_point.x, start_point.y, "Simulation"};
-    std::string configPath = "orbital.lemesave";
+    std::string configPath = "sun_earth.lemesave";
     sw.run(configPath);
 
     // This lets the operating system (Windows, Mac, Linux, etc.) know that the program

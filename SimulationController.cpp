@@ -189,7 +189,9 @@ void SimulationController::load(std::string& path) {
     {
         std::cerr << e.what() << '\n';
     }
-
+}
+void SimulationController::reset() {
+    particles.clear();
 }
 
 // void SimulationController::removeParticle(std::unique_ptr<Particle> ptr_particle) {

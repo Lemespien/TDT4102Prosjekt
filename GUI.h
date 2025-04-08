@@ -15,13 +15,14 @@ class SimulationWindow : public TDT4102::AnimationWindow
         // Konstanter for grafikkvinduet
         static constexpr int button_width = 80;
         static constexpr int button_height = 40;
+        static constexpr int width = 1600;
+        static constexpr int height = 900;
         
         bool simulation_running = false;
         bool inputHeld = false;
 
-        int width = 1920;
-        int height = 1080;
-
+        Stopwatch sw;
+        std::string configPath = "orbital.lemesave";
         // Medlemsfunksjoner
         void draw_particles();
         void handle_input();

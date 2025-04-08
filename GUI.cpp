@@ -11,23 +11,24 @@ std::vector<TDT4102::Color> colors{
     TDT4102::Color::dark_olivegreen,
 };
 
-SimulationWindow::SimulationWindow(int x, int y, const std::string& title) : sc{width, height} {
-    AnimationWindow(x, y, width, height, title);
-}
+SimulationWindow::SimulationWindow(int x, int y, const std::string& title) : 
+    AnimationWindow{x, y, width, height, title},
+    sc{width, height}
+{}
 
 void SimulationWindow::run(std::string& configPath) {
-    // TODO: implement pre_config loading
-    Stopwatch sw;
     while(!should_close()) {
         sw.start();
         if(!simulation_running) {
             try{
                 // Load funksjonalitet
+                sc.reset(); // Remove all the old stuff
                 sc.load(configPath);
+                configPath = configPath;
                 // std::cout << "Load not implemented" << std::endl;
             }
             catch(const std::ios_base::failure& e) {
-                std::cerr << "Error: " << e.what() << std::endl;
+                std::cerr << "Error loading config: " << e.what() << std::endl;
             }
             std::cout << "Starting simulation" << std::endl;
             simulation_running = true;
@@ -50,9 +51,11 @@ void SimulationWindow::draw_particles() {
 
     return;
 }
+
 void SimulationWindow::handle_input() {
-    bool current_0_state = is_key_down(KeyboardKey::SPACE);
-    
+    bool current_0_state = is_key_down(KeyboardKey::SPACE); // Pause
+    bool current_1_state = is_key_down(KeyboardKey::R); // Reset
+
     if (current_0_state) {
         if (!inputHeld) {
             sc.toggleRunState();
@@ -61,8 +64,15 @@ void SimulationWindow::handle_input() {
             // }
             inputHeld = true;
         }
+    } else if (current_1_state) {
+        if (!inputHeld) {
+            sc.reset();
+            sc.load(configPath);
+        }
     } else if (inputHeld) {
         inputHeld = false;
     }
+
+
     return;
 }

@@ -48,4 +48,5 @@ class SimulationController {
         void toggleRunState();
         void toggleConstantGravity();
         void load(std::string& path);
+        void reset();
 };
