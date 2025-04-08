@@ -1,0 +1,22 @@
+//useConstantGravity useBoundingBox isBouncy useGravitationAttraction
+<settings>
+useConstantGravity
+0
+useBoundingBox
+1
+isBouncy
+1
+useGravitationAttraction
+1
+timestepScaling
+1
+</settings>
+
+//pos=(x, y) speed=(x, y) mass=m radius=r
+<particles>
+960 540 0 0 2e17 32
+104 540 0 200 5.97e11 4
+1816 540 0 -200 5.97e11 4
+960 270 400 0 5.97e11 4
+1160 810 -400 0 5.97e11 4
+</particles>
