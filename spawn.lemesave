@@ -11,13 +11,18 @@ useGravitationAttraction
 random
 1
 </bool>
+<double>
+timestepScaling
+5
+</double>
+<int>
+count
+100
+interval
+20
+</int>
 
 //pos=(x, y) speed=(x, y) mass=m radius=r
 <particles>
-500 200 25 25 10 8
-500 220 0 0 10 8
-500 240 0 0 10 8
-500 260 0 0 10 8
-500 280 0 0 10 8
-500 300 0 0 10 8
+
 </particles>

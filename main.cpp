@@ -17,7 +17,7 @@ int main() {
 
     TDT4102::Point start_point{50, 50};
     SimulationWindow sw{start_point.x, start_point.y, "Simulation"};
-    std::string configPath = "sun_earth.lemesave";
+    std::string configPath = "save1.lemesave";
     sw.run(configPath);
 
     // This lets the operating system (Windows, Mac, Linux, etc.) know that the program

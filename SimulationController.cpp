@@ -11,6 +11,12 @@ const std::vector<std::string> SimulationController::doubleSettings {
     "timestepScaling",
 };
 
+const std::vector<std::string> SimulationController::intSettings {
+    "count",
+    "interval",
+    "random"
+};
+
 SimulationController::SimulationController(int width, int height){
     bWidth = width;
     bHeight = height;
@@ -65,7 +71,7 @@ void SimulationController::randomSpawn() {
         Vector2(3*bWidth/4, 3*bHeight/4)
     };
     int insideCount = 0;
-    for (int i = 0; i < partCount; i++){
+    for (int i = 0; i < count; i++){
         double radius = distR(rng);
         bool isInside = true;
         Vector2 pos;
@@ -116,55 +122,67 @@ void SimulationController::toggleConstantGravity() {
     useConstantGravity = useConstantGravity ? false: true;
 }
 
-void SimulationController::load(std::string& path) {
-    std::ifstream f(path);
+template <typename T> void SimulationController::loadingLoop(std::ifstream& f, 
+    std::string& line,
+    const std::string toFind, 
+    const std::vector<std::string>& settings,
+    std::map<std::string, T>& settingVarMap
+) {
+    if (line.find(toFind) == std::string::npos) {
+        return;
+    }
+    
+    for (auto& s : settings) {
+        std::getline(f, line); // Get setting name
+        if (s == line) {
+            std::getline(f, line); // Get setting value
+            std::istringstream iss2(line);
+            iss2 >> this->*settingVarMap[s];
+        }
+    }
+}
 
-    std::map<std::string, bool SimulationController::*> bool_dict {
+void SimulationController::load(std::string& path) {
+    reset(); // we always want to reset everything before we load.
+    std::ifstream f(path);
+    std::map<std::string, bool SimulationController::*> boolMap {
         {"useConstantGravity", &SimulationController::useConstantGravity},
         {"useBoundingBox", &SimulationController::useBoundingBox},
         {"isBouncy", &SimulationController::isBouncy},
-        {"useGravitationAttraction", &SimulationController::useGravitationAttraction}
+        {"useGravitationAttraction", &SimulationController::useGravitationAttraction},
+        {"random", &SimulationController::random}
     };
 
-    std::map<std::string, double SimulationController::*> double_dict {
+    std::map<std::string, double SimulationController::*> doubleMap {
         {"timestepScaling", &SimulationController::timestepScaling}
+    };
+
+    std::map<std::string, int SimulationController::*> intMap {
+        {"count", &SimulationController::count},
+        {"interval", &SimulationController::interval}
     };
 
     std::string line;
     bool loadingParticles = false;
     bool loadingSettings = false;
+    bool loadingSpawner = false;
     try
     {
         while (std::getline(f, line)) {
             std::istringstream iss(line);
-    
-            if (loadingSettings) {
-                for (auto& s : boolSettings) {
-                    if (s == line) {
-                        std::getline(f, line);
-                        std::istringstream iss2(line);
-                        iss2 >> this->*bool_dict[s];
-                    }
-                }
-                for (auto& s : doubleSettings) {
-                    if (s == line) {
-                        std::getline(f, line);
-                        std::istringstream iss2(line);
-                        iss2 >> this->*double_dict[s];
-                    }
-                }
-        
-            }
-    
+            loadingLoop<bool SimulationController::*>(f, line, std::string("<bool>"), boolSettings, boolMap);
+            loadingLoop<double SimulationController::*>(f, line, std::string("<double>"), doubleSettings, doubleMap);
+            loadingLoop<int SimulationController::*>(f, line, std::string("<int>"), intSettings, intMap);
+           
             if (loadingParticles) {
                 double posX, posY, velX, velY, mass;
                 double radius;
                 Vector2 pos;
                 Vector2 vel;
-                if (!(iss >> pos >> vel >> mass >> radius)) { break; }
+                if (!(iss >> pos >> vel >> mass >> radius)) { continue; }
                 createParticle(pos, vel, mass, radius);
             }
-    
+
             if (line.find("<particles>") != std::string::npos) {
                 loadingParticles = true;
                 continue;
@@ -173,16 +191,6 @@ void SimulationController::load(std::string& path) {
                 loadingParticles = false;
                 continue;
             }
-    
-            if (line.find("<settings>") != std::string::npos) {
-                loadingSettings = true;
-                continue;
-            }
-            if (line.find("</settings>") != std::string::npos) {
-                loadingSettings = false;
-                continue;
-            }
-    
         }
     }
     catch(const std::exception& e)
@@ -212,7 +220,7 @@ void SimulationController::step() {
     }
     
     // Basic spawning functionality
-    if (false && currentCount <= partCount && everyCount >= everyX) {
+    if (false && currentCount <= count && everyCount >= interval) {
         createParticle(Vector2(10 + currentCount*25 % bWidth, 20), Vector2(0, gravity_acc_e));
         currentCount++;
         everyCount = 0;
