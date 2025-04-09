@@ -49,6 +49,7 @@ class SimulationController {
         void removeParticle(std::unique_ptr<Particle> ptr_particle);
         Vector2 calculateGravitationalForces(std::unique_ptr<Particle>& particle);
         Vector2 calculateCollisions(std::unique_ptr<Particle>& particle, double const& timestepScaled);
+        Vector2 calculateForces(std::unique_ptr<Particle>& particle);
         void step();
         void toggleRunState();
         void toggleConstantGravity();
@@ -56,7 +57,7 @@ class SimulationController {
         void reset();
         
         template <typename T> 
-        void loadingLoop(std::ifstream& f, 
+        bool loadingLoop(std::ifstream& f, 
             std::string& line,
             const std::string toFind, 
             const std::vector<std::string>& settings,

@@ -10,19 +10,19 @@ useGravitationAttraction
 1
 random
 1
-</bool>
+</>
 <double>
 timestepScaling
 5
-</double>
+</>
 <int>
 count
 100
 interval
 20
-</int>
+</>
 
 //pos=(x, y) speed=(x, y) mass=m radius=r
 <particles>
 
-</particles>
+</>

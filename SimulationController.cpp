@@ -122,24 +122,27 @@ void SimulationController::toggleConstantGravity() {
     useConstantGravity = useConstantGravity ? false: true;
 }
 
-template <typename T> void SimulationController::loadingLoop(std::ifstream& f, 
+template <typename T> bool SimulationController::loadingLoop(std::ifstream& f, 
     std::string& line,
     const std::string toFind, 
     const std::vector<std::string>& settings,
     std::map<std::string, T>& settingVarMap
 ) {
+
     if (line.find(toFind) == std::string::npos) {
-        return;
+        return false;
     }
-    
     for (auto& s : settings) {
         std::getline(f, line); // Get setting name
         if (s == line) {
             std::getline(f, line); // Get setting value
             std::istringstream iss2(line);
             iss2 >> this->*settingVarMap[s];
+        } else if (s == "</>") {
+            return true;
         }
     }
+    return true;
 }
 
 void SimulationController::load(std::string& path) {
@@ -164,15 +167,22 @@ void SimulationController::load(std::string& path) {
 
     std::string line;
     bool loadingParticles = false;
-    bool loadingSettings = false;
-    bool loadingSpawner = false;
+    bool loadedBool = false;
+    bool loadedDouble = false;
+    bool loadedInt = false;
     try
     {
         while (std::getline(f, line)) {
             std::istringstream iss(line);
-            loadingLoop<bool SimulationController::*>(f, line, std::string("<bool>"), boolSettings, boolMap);
-            loadingLoop<double SimulationController::*>(f, line, std::string("<double>"), doubleSettings, doubleMap);
-            loadingLoop<int SimulationController::*>(f, line, std::string("<int>"), intSettings, intMap);
+            if (!loadedBool) {
+                loadedBool = loadingLoop<bool SimulationController::*>(f, line, std::string("<bool>"), boolSettings, boolMap);
+            }
+            if (!loadedDouble) {
+                loadedDouble = loadingLoop<double SimulationController::*>(f, line, std::string("<double>"), doubleSettings, doubleMap);
+            }
+            if (!loadedInt) {
+                loadedInt = loadingLoop<int SimulationController::*>(f, line, std::string("<int>"), intSettings, intMap);
+            }
            
             if (loadingParticles) {
                 double posX, posY, velX, velY, mass;
@@ -277,6 +287,13 @@ void SimulationController::step() {
                 }
             }
         }
+        
+    
+        // totalForceVec = calculateForces(particle);
+        // particle->applyForce(totalForceVec);
+        // Vector2 futurePos = particle->calculateFuturePos(timestepScaled);
+
+
         particle->setPosition(futurePos);
     }
     stopwatch.start();
@@ -351,4 +368,19 @@ Vector2 SimulationController::calculateCollisions(std::unique_ptr<Particle>& par
     //     collisionVel.y = 0;
     // }
     return collisionVel;
+}
+
+
+Vector2 SimulationController::calculateForces(std::unique_ptr<Particle>& particle) {
+    Vector2 forceVec = Vector2(0, 0);
+    if (useConstantGravity) {
+        forceVec.y += particle->mass*leme_sim::gravity_acc_e;
+    }
+
+    if (useBoundingBox && particle->getPosition().y + particle->radius > bHeight) {
+        // If on the 'ground', should deaccelerate
+        forceVec.y = 0; // this wont stop it.
+    }
+    std::cout << "forceVec: " << forceVec << std::endl;
+    return forceVec;
 }
