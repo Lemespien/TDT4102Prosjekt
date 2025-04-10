@@ -22,8 +22,10 @@ void Particle::setPosition(const Vector2& newPos) {
     setPosition(newPos.x, newPos.y);
 }
 
-TDT4102::Point Particle::getIntPosition() {
-    return TDT4102::Point{static_cast<int>(position.x), static_cast<int>(position.y)};
+TDT4102::Point& Particle::getIntPosition() {
+    intPosition.x = position.x;
+    intPosition.y = position.y;
+    return intPosition;
 }
 
 void Particle::setVisibility(bool visible) {

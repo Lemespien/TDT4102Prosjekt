@@ -35,9 +35,15 @@ class SimulationController {
 
         // Spawner - Move to seperate file.
         int interval = 50;
-        int count = 0; // Amount to spawn
+        int count = 1000; // Amount to spawn
         int currentCount = 0; // tracks 
         int everyCount = 0;
+        int minRadius = 3;
+        int maxRadius = 5;
+        double minVel = 25;
+        double maxVel = 25;
+        double minMass = 2;
+        double maxMass = 10;
         bool random = false;
 
     public:
@@ -51,7 +57,7 @@ class SimulationController {
         Vector2 calculateGravitationalForces(std::unique_ptr<Particle>& particle);
         Vector2 calculateCollisions(std::unique_ptr<Particle>& particle, double const& timestepScaled);
         void calculateVelocity(std::unique_ptr<Particle>& particle, const double& timestepScaled);
-        void step();
+        void step(double timestep = -1);
         void toggleRunState();
         void toggleConstantGravity();
         void load(std::string& path);

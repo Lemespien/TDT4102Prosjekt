@@ -32,6 +32,7 @@ class SimulationWindow : public TDT4102::AnimationWindow
         SimulationWindow(int x, int y, const std::string& title);
         SimulationController sc;
         // kjører programmet
+        int runCount = 0;
         void run(std::string& pre_config);
 
 };

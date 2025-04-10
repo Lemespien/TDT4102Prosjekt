@@ -14,11 +14,21 @@ std::vector<TDT4102::Color> colors{
 SimulationWindow::SimulationWindow(int x, int y, const std::string& title) : 
     AnimationWindow{x, y, width, height, title},
     sc{width, height}
-{}
+{
+}
 
+int drawInterval = 1;
+int drawIntCounter = 0;
+double avgFPS = 0;
+const double smoothing = 0.85;
 void SimulationWindow::run(std::string& configPath) {
     while(!should_close()) {
-        sw.start();
+        if (!sw.isRunning) {
+            sw.start();
+        }
+            // double timestep = sw.stop();
+        // std::cout << "time elapsed: " << timestep << std::endl;
+
         if(!simulation_running) {
             try{
                 // Load funksjonalitet
@@ -33,16 +43,38 @@ void SimulationWindow::run(std::string& configPath) {
             std::cout << "Starting simulation" << std::endl;
             simulation_running = true;
         }
-        draw_particles();
+        double tickrate = sw.stop();
+        sw.start();
+        sc.step(tickrate);
+        drawIntCounter++;
+        if (drawIntCounter > drawInterval) {
+            // An attempt at limiting draw calls compared to "physics" calculations.
+            // this is currently frame rate dependent.... which means lower FPS == choppier movement
+            keep_previous_frame(false);
+            next_frame();
+            draw_particles();
+            if (sc.isPaused) {
+                // magic placement numbers that totaly work for all window sizes.... /s
+                draw_rectangle(TDT4102::Point(width/2-275, height/2-5), 560, 60);
+                draw_text(TDT4102::Point(width/2-265, height/2), "Paused - Press space to unpause", TDT4102::Color::black, 40U);
+            }
+            keep_previous_frame(true);
+            drawIntCounter = 0;
+        }
+
         handle_input();
-        next_frame();
-        double timebetween = sw.stop();
-        // std::cout << "Framerate: " << 1/timebetween << std::endl;
+
+        // next_frame();
+        if (!sc.isPaused) {
+            // 'Smoothing filter', learned from AIST1001
+            avgFPS = (avgFPS * smoothing) + 1/tickrate * (1.0 - smoothing);
+            runCount++;
+        }
+        // std::cout << "Run loop | avgFPS: " << avgFPS << " | Timestep: " << tickrate << " | run count: " << runCount << std::endl;
     }
 }
 
 void SimulationWindow::draw_particles() {
-    sc.step();
     int count = 0;
     for (auto& particle : sc.getParticles()) {
         draw_circle(particle->getIntPosition(), particle->radius, colors.at(count));
@@ -59,9 +91,6 @@ void SimulationWindow::handle_input() {
     if (current_0_state) {
         if (!inputHeld) {
             sc.toggleRunState();
-            // if (sc.isPaused) {
-            //     draw_text(TDT4102::Point(width/2, height*3/4), "Paused");
-            // }
             inputHeld = true;
         }
     } else if (current_1_state) {

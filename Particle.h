@@ -7,7 +7,7 @@ class Particle {
     private:
         Vector2 position;
         bool isVisible = true;
-
+        TDT4102::Point intPosition;
     public:
         int radius = 10;
         double mass = 10;
@@ -21,7 +21,7 @@ class Particle {
         void setPosition(const double x, const double y);
         void setPosition(const Vector2& newPos);
 
-        TDT4102::Point getIntPosition();
+        TDT4102::Point& getIntPosition();
         void setVisibility(bool visible = false);
         void setVelocity(double hor, double vert);
         void applyForce(Vector2 forceVec);

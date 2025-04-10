@@ -28,8 +28,8 @@ SimulationController::SimulationController(int width, int height){
     // isBouncy = false;
     // useConstantGravity = false;
     // useBoundingBox = false;
-    isPaused = true;
-    randomSpawn();
+    // isPaused = true;
+
     // createParticle(Vector2(width/2, height/2), Vector2(0, 0), leme_sim::mass_sun, 32);
     // createParticle(Vector2(width/2 -856, height/2), Vector2(0, 200), leme_sim::mass_earth, 4);
     // createParticle(Vector2(width/2 +856, height/2), Vector2(0, -200), leme_sim::mass_earth*4, 8);
@@ -62,10 +62,10 @@ void SimulationController::randomSpawn() {
 
     std::uniform_int_distribution<std::mt19937::result_type> distW(25, bWidth-25);//PosX
     std::uniform_int_distribution<std::mt19937::result_type> distH(25, bHeight-25);//PosY
-    std::uniform_int_distribution<std::mt19937::result_type> distV(1, 5); //Velocity
+    std::uniform_int_distribution<std::mt19937::result_type> distV(minVel, maxVel); //Velocity
     std::uniform_int_distribution<std::mt19937::result_type> distD(0, 1); //Direction
-    std::uniform_int_distribution<std::mt19937::result_type> distR(2, 6); //Radius
-    std::uniform_int_distribution<std::mt19937::result_type> distM(50, 100); //Mass
+    std::uniform_int_distribution<std::mt19937::result_type> distR(minRadius, maxRadius); //Radius
+    std::uniform_int_distribution<std::mt19937::result_type> distM(minMass, maxMass); //Mass
 
     std::vector<Vector2> positions{
         Vector2(bWidth/2, bHeight/2), 
@@ -103,7 +103,7 @@ void SimulationController::randomSpawn() {
         Vector2 vel = Vector2(distV(rng), distV(rng))*dir;
         std::cout << "pos: " << pos << " | vel: " << vel << " | inside count: " << insideCount << std::endl;
 
-        auto testy = createParticle(pos, Vector2(0, 0), distM(rng), radius);
+        auto testy = createParticle(pos, vel, distM(rng), radius);
 
     }
 }
@@ -209,6 +209,7 @@ void SimulationController::load(std::string& path) {
     {
         std::cerr << e.what() << '\n';
     }
+    randomSpawn();
 }
 void SimulationController::reset() {
     particles.clear();
@@ -217,15 +218,14 @@ void SimulationController::reset() {
 // void SimulationController::removeParticle(std::unique_ptr<Particle> ptr_particle) {
 //     // TODO: implement removal
 // }
+void SimulationController::step(double timestep) {
 
-void SimulationController::step() {
+    // if (!stopwatch.isRunning) {
+    //     stopwatch.start();
+    //     return;
+    // }
 
-    if (!stopwatch.isRunning) {
-        stopwatch.start();
-        return;
-    }
-
-    double timestep = stopwatch.stop();
+    // double timestep = stopwatch.stop();
 
     if (isPaused) {
         return;
@@ -241,8 +241,8 @@ void SimulationController::step() {
     }
 
     double timestepScaled = timestep * timestepScaling;
-    double frameRate = 1 / timestep;
-    // std::cout << "Framerate: " << frameRate << " | Timestep: " << timestep << std::endl;
+    // double frameRate = 1 / timestep;
+    // std::cout << "Step func |  Framerate: " << frameRate << " | Timestep: " << timestep << " | Run count: " << runCount << std::endl;
     for (auto& particle : particles) {
         Vector2 totalForceVec = Vector2(0, 0);
     //     /*
@@ -300,7 +300,7 @@ void SimulationController::step() {
 
         particle->setPosition(futurePos);
     }
-    stopwatch.start();
+    // stopwatch.start();
 }
 
 
@@ -358,6 +358,9 @@ Vector2 SimulationController::calculateCollisions(std::unique_ptr<Particle>& par
     Vector2 collisionVel = particle->velocity;
     for (auto& otherP : particles) {
         if (particle == otherP) continue;
+        if (futurePos.distanceToSq(otherP->getPosition()) > maxRadius*maxRadius+5) {
+            continue;
+        }
         double radii = (particle->radius + otherP->radius) *gravCalcDistTol;
         if (futurePos.distanceTo(otherP->getPosition()) < radii) {
             Vector2 v3 = Vector2(0, 0);
