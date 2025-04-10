@@ -1,7 +1,7 @@
 //useConstantGravity useBoundingBox isBouncy useGravitationAttraction
 <bool>
 useConstantGravity
-1
+0
 useBoundingBox
 1
 isBouncy
@@ -16,17 +16,17 @@ random
 timestepScaling
 1
 floorBounciness
-0.00
+1.0
 </>
 
 <int>
 count
-500
+100
 </>
 
 //pos=(x, y) speed=(x, y) mass=m radius=r
 <particles>
-500 700 50 0 25 5
-600 715 -50 0 25 5
+500 700 0 0 5000 10
+600 715 0 0 2500 5
 
 </>

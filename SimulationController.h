@@ -4,28 +4,49 @@
 #include <iostream>
 #include <random>
 #include <fstream>
+#include <sstream>
+#include <map>
 
 #include "Particle.h"
-#include "Stopwatch.h"
 #include "PhysicsConstants.h"
-
-#include <map>
-#include <variant>
 
 using namespace leme_sim;
 
 class SimulationController {
     private:
-        static const std::vector<std::string> boolSettings;
-        static const std::vector<std::string> doubleSettings;
-        static const std::vector<std::string> intSettings;
+        const std::vector<std::string> boolSettings {
+            "useConstantGravity",
+            "useBoundingBox",
+            "isBouncy",
+            "useGravitationAttraction",
+        };
+        
+        const std::vector<std::string> doubleSettings {
+            "timestepScaling",
+            "floorBounciness"
+        };
+        
+        const std::vector<std::string> intSettings {
+            "count",
+            "interval",
+            "random"
+        };
         std::vector<std::unique_ptr<Particle>> particles;
         std::vector<std::unique_ptr<Particle>> particlesMarkedForRemoval;
+        const std::string defaultConfig = "default.lemesave";
         int bWidth, bHeight;
-        Stopwatch stopwatch;
-        
+
+        static constexpr double gravCalcDistTol = 1.05;
+        /* ----------------------------
+        NOTE:
+
+        Most of these settings can be (and are) changed 
+        in .lemesave files
+
+        -------------------------------
+        */
+
         // Simulation settings - Should probably be a settings file
-        static constexpr double gravCalcDistTol = 1.01;
         double timestepScaling = 1;
         double floorBounciness = 0.55;
         bool useConstantGravity = false;
@@ -35,15 +56,15 @@ class SimulationController {
 
         // Spawner - Move to seperate file.
         int interval = 50;
-        int count = 1000; // Amount to spawn
-        int currentCount = 0; // tracks 
-        int everyCount = 0;
+        int intervalTracker = 0; 
+        int count = 100; // Amount to spawn
+        int countTracker = 0; // Tracker 
         int minRadius = 3;
-        int maxRadius = 5;
-        double minVel = 25;
-        double maxVel = 25;
-        double minMass = 2;
-        double maxMass = 10;
+        int maxRadius = 10;
+        double minVel = 0;
+        double maxVel = 0;
+        double minMass = 1e3;
+        double maxMass = 2.5e3;
         bool random = false;
 
     public:
@@ -54,13 +75,14 @@ class SimulationController {
         void randomSpawn();
         void markParticleForRemoval(std::unique_ptr<Particle> ptr_particle);
         void removeParticle(std::unique_ptr<Particle> ptr_particle);
-        Vector2 calculateGravitationalForces(std::unique_ptr<Particle>& particle);
+        Vector2 calculateGravAttAcceleration(std::unique_ptr<Particle>& particle, const double& timestepScaled);
         Vector2 calculateCollisions(std::unique_ptr<Particle>& particle, double const& timestepScaled);
         void calculateVelocity(std::unique_ptr<Particle>& particle, const double& timestepScaled);
         void step(double timestep = -1);
         void toggleRunState();
         void toggleConstantGravity();
-        void load(std::string& path);
+        void load(const std::string& path);
+        void loadDefault();
         void reset();
         
         template <typename T> 

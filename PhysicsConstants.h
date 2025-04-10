@@ -3,7 +3,7 @@
 
 
 namespace leme_sim {
-    static constexpr double gravity_acc_e = 19.81;
+    static constexpr double gravity_acc_e = 9.81;
 
     // static constexpr double mass_sun = 2e30;
     // static constexpr double mass_earth = 5.97e24;
@@ -13,7 +13,7 @@ namespace leme_sim {
 
     static constexpr double distance_avg_sun_earth = 149e9;
 
-    static constexpr double G_const = 6.674*10e-11;
+    static constexpr double G_const = 6.674*10e-0;
     // SCALED VERSIONS
     static constexpr double mass_sun = 2e17;
     static constexpr double mass_earth = 5.97e11;

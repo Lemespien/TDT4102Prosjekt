@@ -1,44 +1,30 @@
 #include "GUI.h"
 
-std::vector<TDT4102::Color> colors{
-    TDT4102::Color::crimson,
-    TDT4102::Color::black,
-    TDT4102::Color::dark_blue,
-    TDT4102::Color::purple,
-    TDT4102::Color::tomato,
-    TDT4102::Color::royal_blue,
-    TDT4102::Color::rosy_brown,
-    TDT4102::Color::dark_olivegreen,
-};
-
 SimulationWindow::SimulationWindow(int x, int y, const std::string& title) : 
     AnimationWindow{x, y, width, height, title},
     sc{width, height}
+
 {
 }
 
-int drawInterval = 1;
-int drawIntCounter = 0;
-double avgFPS = 0;
-const double smoothing = 0.85;
+
 void SimulationWindow::run(std::string& configPath) {
     while(!should_close()) {
-        if (!sw.isRunning) {
-            sw.start();
-        }
-            // double timestep = sw.stop();
-        // std::cout << "time elapsed: " << timestep << std::endl;
-
         if(!simulation_running) {
+            if (!sw.isRunning) {
+                sw.start();
+            }
             try{
                 // Load funksjonalitet
                 sc.reset(); // Remove all the old stuff
                 sc.load(configPath);
-                configPath = configPath;
+                this->configPath = configPath;
+                sc.randomSpawn();
                 // std::cout << "Load not implemented" << std::endl;
             }
             catch(const std::ios_base::failure& e) {
                 std::cerr << "Error loading config: " << e.what() << std::endl;
+                sc.loadDefault();
             }
             std::cout << "Starting simulation" << std::endl;
             simulation_running = true;
@@ -50,6 +36,7 @@ void SimulationWindow::run(std::string& configPath) {
         if (drawIntCounter > drawInterval) {
             // An attempt at limiting draw calls compared to "physics" calculations.
             // this is currently frame rate dependent.... which means lower FPS == choppier movement
+            // Doesnt change much atm. Time is better spent optimizing physics calculations.
             keep_previous_frame(false);
             next_frame();
             draw_particles();
@@ -65,7 +52,7 @@ void SimulationWindow::run(std::string& configPath) {
         handle_input();
 
         // next_frame();
-        if (!sc.isPaused) {
+        if (!sc.isPaused) { // Only track avg fps when sim is running.
             // 'Smoothing filter', learned from AIST1001
             avgFPS = (avgFPS * smoothing) + 1/tickrate * (1.0 - smoothing);
             runCount++;
@@ -75,10 +62,10 @@ void SimulationWindow::run(std::string& configPath) {
 }
 
 void SimulationWindow::draw_particles() {
-    int count = 0;
+    std::size_t count = 0;
     for (auto& particle : sc.getParticles()) {
-        draw_circle(particle->getIntPosition(), particle->radius, colors.at(count));
-        count = ++count % colors.size();
+        draw_circle(particle->getIntPosition(), particle->radius, colorsVector.at(count));
+        count = ++count % colorsVector.size();
     }
 
     return;

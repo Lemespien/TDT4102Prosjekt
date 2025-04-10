@@ -3,8 +3,12 @@
 #include <iostream>
 
 struct Vector2 {
-    double x;
-    double y;
+    double x = 0;
+    double y = 0;
+    Vector2(double x = 0, double y = 0) {
+        this->x = x;
+        this->y = y;
+    }
     double distanceTo(Vector2& otherVec) {
         return std::sqrt(pow(otherVec.x - x, 2) + pow(otherVec.y - y, 2));
     }

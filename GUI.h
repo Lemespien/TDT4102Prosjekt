@@ -5,7 +5,7 @@
 #include "widgets/Button.h"
 
 #include "Stopwatch.h"
-#include "Particle.h"
+#include "ColorsVector.h"
 #include "SimulationController.h"
 
 class SimulationWindow : public TDT4102::AnimationWindow
@@ -17,10 +17,12 @@ class SimulationWindow : public TDT4102::AnimationWindow
         static constexpr int button_height = 40;
         static constexpr int width = 1600;
         static constexpr int height = 900;
-        
+        static constexpr double smoothing = 0.85;
         bool simulation_running = false;
         bool inputHeld = false;
-
+        int drawInterval = 1;
+        int drawIntCounter = 0;
+        
         Stopwatch sw;
         std::string configPath = "orbital.lemesave";
         // Medlemsfunksjoner
@@ -33,6 +35,8 @@ class SimulationWindow : public TDT4102::AnimationWindow
         SimulationController sc;
         // kjører programmet
         int runCount = 0;
+        double avgFPS = 0;
+
         void run(std::string& pre_config);
 
 };
