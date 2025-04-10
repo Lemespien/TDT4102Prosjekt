@@ -1,18 +1,27 @@
 //useConstantGravity useBoundingBox isBouncy useGravitationAttraction
 <bool>
 useConstantGravity
-1
+0
 useBoundingBox
 1
 isBouncy
-0
+1
 useGravitationAttraction
 1
 random
 1
 </>
 
+<double>
+timestepScaling
+2
+floorBounciness
+1.0
+</>
+
 //pos=(x, y) speed=(x, y) mass=m radius=r
 <particles>
-500 200 0 0 25 10
+500 700 50 0 25 10
+600 715 -50 0 25 10
+
 </>

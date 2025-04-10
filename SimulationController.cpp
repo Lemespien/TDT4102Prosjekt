@@ -9,6 +9,7 @@ const std::vector<std::string> SimulationController::boolSettings {
 
 const std::vector<std::string> SimulationController::doubleSettings {
     "timestepScaling",
+    "floorBounciness"
 };
 
 const std::vector<std::string> SimulationController::intSettings {
@@ -157,7 +158,8 @@ void SimulationController::load(std::string& path) {
     };
 
     std::map<std::string, double SimulationController::*> doubleMap {
-        {"timestepScaling", &SimulationController::timestepScaling}
+        {"timestepScaling", &SimulationController::timestepScaling},
+        {"floorBounciness", &SimulationController::floorBounciness},
     };
 
     std::map<std::string, int SimulationController::*> intMap {
@@ -243,55 +245,57 @@ void SimulationController::step() {
     // std::cout << "Framerate: " << frameRate << " | Timestep: " << timestep << std::endl;
     for (auto& particle : particles) {
         Vector2 totalForceVec = Vector2(0, 0);
-        /*
-        Calculate gravitational pull towards other particles
-        */
-       if (useGravitationAttraction) {
-           totalForceVec = calculateGravitationalForces(particle);
-        }
-        particle->applyForce(totalForceVec);
-        particle->velocity += particle->acceleration * timestepScaled;
+    //     /*
+    //     Calculate gravitational pull towards other particles
+    //     */
+    //    if (useGravitationAttraction) {
+    //        totalForceVec = calculateGravitationalForces(particle);
+    //     }
+    //     particle->applyForce(totalForceVec);
+    //     particle->velocity += particle->acceleration * timestepScaled;
         
-        /*
-        Check for collisions with other particles
-        */
-       particle->velocity = calculateCollisions(particle, timestepScaled);
-       auto futurePos = particle->calculateFuturePos(timestepScaled);
-        //std::cout << "Vel: " << particle->velocity << std::endl;
+    //     /*
+    //     Check for collisions with other particles
+    //     */
+    //    particle->velocity = calculateCollisions(particle, timestepScaled);
+    //    auto futurePos = particle->calculateFuturePos(timestepScaled);
+    //     //std::cout << "Vel: " << particle->velocity << std::endl;
 
-    // Collision detection for bounding box
-        if (useBoundingBox) {
-            if (futurePos.x - particle->radius > 0 && futurePos.x + particle->radius < bWidth) {
-                // newPos.x = futurePos.x;
-            } else {
-                if (futurePos.x - particle->radius <= 0) {
-                    futurePos.x = particle->radius;
-                } else {
-                    futurePos.x = bWidth - particle->radius;
-                }
-                if (isBouncy) {
-                    particle->velocity.x *= -1;
-                }
-            }
+    // // Collision detection for bounding box
+    //     if (useBoundingBox) {
+    //         if (futurePos.x - particle->radius > 0 && futurePos.x + particle->radius < bWidth) {
+    //             // newPos.x = futurePos.x;
+    //         } else {
+    //             if (futurePos.x - particle->radius <= 0) {
+    //                 futurePos.x = particle->radius;
+    //             } else {
+    //                 futurePos.x = bWidth - particle->radius;
+    //             }
+    //             if (isBouncy) {
+    //                 particle->velocity.x *= -1;
+    //             }
+    //         }
     
-            if ((futurePos.y - particle->radius > 0) && (futurePos.y + particle->radius < bHeight)) {
-                futurePos.y = futurePos.y;
-            } else {
-                if (futurePos.y - particle->radius <= 0) {
-                    futurePos.y = particle->radius;
-                } else {
-                    futurePos.y = bHeight - particle->radius;
-                }
-                if (isBouncy) {
-                    particle->velocity.y *= -1;
-                }
-            }
-        }
+    //         if ((futurePos.y - particle->radius > 0) && (futurePos.y + particle->radius < bHeight)) {
+    //             futurePos.y = futurePos.y;
+    //         } else {
+    //             if (futurePos.y - particle->radius <= 0) {
+    //                 futurePos.y = particle->radius;
+    //             } else {
+    //                 futurePos.y = bHeight - particle->radius;
+    //             }
+    //             if (isBouncy) {
+    //                 particle->velocity.y *= -1;
+    //             }
+    //         }
+    //     }
         
     
-        // totalForceVec = calculateForces(particle);
+        calculateVelocity(particle, timestepScaled);
         // particle->applyForce(totalForceVec);
-        // Vector2 futurePos = particle->calculateFuturePos(timestepScaled);
+        // particle->velocity += particle->acceleration * timestepScaled;
+
+        Vector2 futurePos = particle->calculateFuturePos(timestepScaled);
 
 
         particle->setPosition(futurePos);
@@ -358,10 +362,12 @@ Vector2 SimulationController::calculateCollisions(std::unique_ptr<Particle>& par
         if (futurePos.distanceTo(otherP->getPosition()) < radii) {
             Vector2 v3 = Vector2(0, 0);
             if (isBouncy) {
+                Vector2 dir = particle->getPosition().directionTo(otherP->getPosition());
                 v3 = (2 * collisionVel*particle->mass + otherP->velocity*(otherP->mass - particle->mass))/(particle->mass + otherP->mass);
                 collisionVel += otherP->mass/particle->mass*(otherP->velocity - v3);
+                collisionVel = collisionVel.magnitude()*-dir;
+                otherP->velocity = v3.magnitude()*dir;
             }
-            otherP->velocity = v3;
         }
     }
     // if (futurePos.y + particle->radius > bHeight && collisionVel.y > 0) {
@@ -370,17 +376,48 @@ Vector2 SimulationController::calculateCollisions(std::unique_ptr<Particle>& par
     return collisionVel;
 }
 
+void SimulationController::calculateVelocity(std::unique_ptr<Particle>& particle, const double& timestepScaled) {
 
-Vector2 SimulationController::calculateForces(std::unique_ptr<Particle>& particle) {
-    Vector2 forceVec = Vector2(0, 0);
-    if (useConstantGravity) {
-        forceVec.y += particle->mass*leme_sim::gravity_acc_e;
+    Vector2 colVec = calculateCollisions(particle, timestepScaled);
+    particle->velocity = colVec;
+
+    Vector2 pos = particle->getPosition();
+    bool isGrounded = particle->getPosition().y + particle->radius >= bHeight;
+
+    if (useConstantGravity && (!useBoundingBox or !isGrounded)) {
+        particle->velocity.y += leme_sim::gravity_acc_e * timestepScaled;
+    }
+    
+    if (!useBoundingBox) {
+        return;
     }
 
-    if (useBoundingBox && particle->getPosition().y + particle->radius > bHeight) {
+    if (isGrounded) {
         // If on the 'ground', should deaccelerate
-        forceVec.y = 0; // this wont stop it.
+        if (particle->velocity.y > 0) {
+            particle->velocity.y = -floorBounciness * particle->velocity.y;
+        } else if (abs(particle->velocity.y) < 0.1) {
+            particle->velocity.y = 0;
+        }
+    } else if (pos.y - particle->radius < 0) {
+        if (particle->velocity.y < 0) {
+            particle->velocity.y = -floorBounciness * particle->velocity.y;
+        } else if (abs(particle->velocity.y) < 0.1) {
+            particle->velocity.y = 0;
+        }
     }
-    std::cout << "forceVec: " << forceVec << std::endl;
-    return forceVec;
+
+    if (pos.x - particle->radius < 0) {
+        if (particle->velocity.x < 0) {
+            particle->velocity.x = -floorBounciness * particle->velocity.x;
+        } else if (abs(particle->velocity.x) < 0.1) {
+            particle->velocity.x = 0;
+        }
+    } else if (pos.x + particle->radius > bWidth) {
+        if (particle->velocity.x > 0) {
+            particle->velocity.x = -floorBounciness * particle->velocity.x;
+        } else if (abs(particle->velocity.x) < 0.1) {
+            particle->velocity.x = 0;
+        }
+    }
 }

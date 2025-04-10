@@ -27,6 +27,7 @@ class SimulationController {
         // Simulation settings - Should probably be a settings file
         static constexpr double gravCalcDistTol = 1.01;
         double timestepScaling = 1;
+        double floorBounciness = 0.55;
         bool useConstantGravity = false;
         bool useGravitationAttraction = true;
         bool isBouncy = true;
@@ -49,7 +50,7 @@ class SimulationController {
         void removeParticle(std::unique_ptr<Particle> ptr_particle);
         Vector2 calculateGravitationalForces(std::unique_ptr<Particle>& particle);
         Vector2 calculateCollisions(std::unique_ptr<Particle>& particle, double const& timestepScaled);
-        Vector2 calculateForces(std::unique_ptr<Particle>& particle);
+        void calculateVelocity(std::unique_ptr<Particle>& particle, const double& timestepScaled);
         void step();
         void toggleRunState();
         void toggleConstantGravity();
