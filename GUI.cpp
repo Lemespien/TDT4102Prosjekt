@@ -37,7 +37,9 @@ void SimulationWindow::run(std::string& configPath) {
             // An attempt at limiting draw calls compared to "physics" calculations.
             // this is currently frame rate dependent.... which means lower FPS == choppier movement
             // Doesnt change much atm. Time is better spent optimizing physics calculations.
-            keep_previous_frame(false);
+            if (!paintMode) {
+                keep_previous_frame(false);
+            }
             next_frame();
             draw_particles();
             if (sc.isPaused) {
@@ -103,6 +105,7 @@ void SimulationWindow::handle_input() {
     bool current_0_state = is_key_down(KeyboardKey::SPACE); // Pause
     bool current_1_state = is_key_down(KeyboardKey::R); // Reset
     bool current_2_state = is_key_down(KeyboardKey::T); // Debug
+    bool current_3_state = is_key_down(KeyboardKey::P); // Paint mode
 
     if (current_0_state) {
         if (!inputHeld) {
@@ -118,6 +121,11 @@ void SimulationWindow::handle_input() {
     } else if (current_2_state) {
         if (!inputHeld) {
             toggleDebug();
+            inputHeld = true;
+        }
+    } else if (current_3_state) {
+        if (!inputHeld) {
+            paintMode = !paintMode;
             inputHeld = true;
         }
     } else if (inputHeld) {

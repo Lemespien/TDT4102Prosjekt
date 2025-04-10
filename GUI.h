@@ -24,6 +24,7 @@ class SimulationWindow : public TDT4102::AnimationWindow
         int drawIntCounter = 0;
         
         bool showDebug = false;
+        bool paintMode = false;
 
         Stopwatch sw;
         std::string configPath = "orbital.lemesave";
