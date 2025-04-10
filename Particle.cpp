@@ -22,7 +22,7 @@ void Particle::setPosition(const Vector2& newPos) {
     setPosition(newPos.x, newPos.y);
 }
 
-TDT4102::Point& Particle::getIntPosition() {
+TDT4102::Point Particle::getIntPosition() {
     intPosition.x = position.x;
     intPosition.y = position.y;
     return intPosition;

@@ -41,6 +41,16 @@ struct Vector2 {
         return x + rhs.x + y + rhs.y;
     }
 
+    Vector2 normal(Vector2& rhs) {
+        Vector2 dir = directionTo(rhs);
+        Vector2 dirNorm = dir/dir.magnitude();
+        return Vector2(-dirNorm.y, dirNorm.x);
+    }
+    
+    Vector2 normalize() {
+        return Vector2(x, y)/magnitude();
+    }
+
     Vector2 operator+(double a) const {
         return Vector2(x + a, y + a);
     }

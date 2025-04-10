@@ -64,7 +64,35 @@ void SimulationWindow::run(std::string& configPath) {
 void SimulationWindow::draw_particles() {
     std::size_t count = 0;
     for (auto& particle : sc.getParticles()) {
-        draw_circle(particle->getIntPosition(), particle->radius, colorsVector.at(count));
+        TDT4102::Point intPos = particle->getIntPosition();
+        draw_circle(intPos, particle->radius, colorsVector.at(count));
+        if (showDebug) {
+            
+            // Acceleration logarithmic lines
+            double accX = log(abs(particle->totalAcc.x));
+            double accY = log(abs(particle->totalAcc.y));
+            auto accVecNorm = particle->totalAcc.normalize();
+            Vector2 totalAccLog = Vector2(accX, accY) * accVecNorm * 15;
+            
+            
+            intPos.x += particle->radius * accVecNorm.x;
+            intPos.y += particle->radius * accVecNorm.y;
+            draw_line(intPos, TDT4102::Point(intPos.x + totalAccLog.x, intPos.y + totalAccLog.y), colorsVector.at(count));
+            
+            // Velocity logarithmic lines
+            double velX = log(abs(particle->velocity.x));
+            double velY = log(abs(particle->velocity.y));
+            
+            auto velPoint = particle->getIntPosition();
+            auto velNormalized = particle->velocity.normalize();
+            Vector2 velLog = Vector2(velX, velY) * velNormalized * 15;
+            
+            velPoint.x += particle->radius * velNormalized.x;
+            velPoint.y += particle->radius * velNormalized.y;
+
+            draw_line(velPoint, TDT4102::Point(velPoint.x + velLog.x, velPoint.y + velLog.y), colorsVector.at(count));
+            // draw_line(intPos, TDT4102::Point(intPos.x + log10(particle->totalAcc.x), intPos.y + log10(particle->totalAcc.y)), colorsVector.at(count));
+        }
         count = ++count % colorsVector.size();
     }
 
@@ -74,6 +102,7 @@ void SimulationWindow::draw_particles() {
 void SimulationWindow::handle_input() {
     bool current_0_state = is_key_down(KeyboardKey::SPACE); // Pause
     bool current_1_state = is_key_down(KeyboardKey::R); // Reset
+    bool current_2_state = is_key_down(KeyboardKey::T); // Debug
 
     if (current_0_state) {
         if (!inputHeld) {
@@ -84,6 +113,12 @@ void SimulationWindow::handle_input() {
         if (!inputHeld) {
             sc.reset();
             sc.load(configPath);
+            inputHeld = true;
+        }
+    } else if (current_2_state) {
+        if (!inputHeld) {
+            toggleDebug();
+            inputHeld = true;
         }
     } else if (inputHeld) {
         inputHeld = false;
@@ -91,4 +126,8 @@ void SimulationWindow::handle_input() {
 
 
     return;
+}
+
+void SimulationWindow::toggleDebug() {
+    showDebug = !showDebug;
 }

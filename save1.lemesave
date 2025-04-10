@@ -16,7 +16,7 @@ random
 timestepScaling
 1
 floorBounciness
-1.0
+0.2
 </>
 
 <int>
@@ -26,7 +26,7 @@ count
 
 //pos=(x, y) speed=(x, y) mass=m radius=r
 <particles>
-500 700 0 0 5000 10
-600 715 0 0 2500 5
+800 450 0 0 50000000000000 40
+600 715 -100 0 5000 25
 
 </>

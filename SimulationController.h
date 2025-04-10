@@ -36,7 +36,7 @@ class SimulationController {
         const std::string defaultConfig = "default.lemesave";
         int bWidth, bHeight;
 
-        static constexpr double gravCalcDistTol = 1.05;
+        static constexpr double gravCalcDistTol = 1.1;
         /* ----------------------------
         NOTE:
 
@@ -48,7 +48,8 @@ class SimulationController {
 
         // Simulation settings - Should probably be a settings file
         double timestepScaling = 1;
-        double floorBounciness = 0.55;
+        double floorBounciness = 0.45;
+        double particleBounciness = 0.5;
         bool useConstantGravity = false;
         bool useGravitationAttraction = true;
         bool isBouncy = true;
@@ -57,7 +58,7 @@ class SimulationController {
         // Spawner - Move to seperate file.
         int interval = 50;
         int intervalTracker = 0; 
-        int count = 100; // Amount to spawn
+        int count = 000; // Amount to spawn
         int countTracker = 0; // Tracker 
         int minRadius = 3;
         int maxRadius = 10;
@@ -75,8 +76,8 @@ class SimulationController {
         void randomSpawn();
         void markParticleForRemoval(std::unique_ptr<Particle> ptr_particle);
         void removeParticle(std::unique_ptr<Particle> ptr_particle);
-        Vector2 calculateGravAttAcceleration(std::unique_ptr<Particle>& particle, const double& timestepScaled);
-        Vector2 calculateCollisions(std::unique_ptr<Particle>& particle, double const& timestepScaled);
+        Vector2 calculateGravAttAcceleration(std::unique_ptr<Particle>& particle);
+        void resolveCollision(std::unique_ptr<Particle>& particle, double const& timestepScaled);
         void calculateVelocity(std::unique_ptr<Particle>& particle, const double& timestepScaled);
         void step(double timestep = -1);
         void toggleRunState();

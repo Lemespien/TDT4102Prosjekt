@@ -12,6 +12,7 @@ std::vector<std::unique_ptr<Particle>> const& SimulationController::getParticles
 Particle& SimulationController::createParticle(Vector2 spawn_position, Vector2 vel, double mass, int radius) {
     std::unique_ptr<Particle> ptr_particle = std::make_unique<Particle>(spawn_position, vel);
     ptr_particle->mass = mass;
+    ptr_particle->massInv = 1/mass;
     ptr_particle->radius = radius;
     particles.push_back(std::move(ptr_particle));
     return *particles.at(particles.size()-1);
@@ -204,14 +205,14 @@ void SimulationController::step(double timestep) {
     for (auto& particle : particles) {
     
         calculateVelocity(particle, timestepScaled);
-
         Vector2 futurePos = particle->calculateFuturePos(timestepScaled);
+        // std::cout << "vel: " << particle->velocity << std::endl;
         particle->setPosition(futurePos);
     }
 }
 
 
-Vector2 SimulationController::calculateGravAttAcceleration(std::unique_ptr<Particle>& particle, const double& timestepScaled) {
+Vector2 SimulationController::calculateGravAttAcceleration(std::unique_ptr<Particle>& particle) {
     Vector2& pos = particle->getPosition();
     Vector2 totalAccVec = Vector2();
     for (auto& otherP : particles) {
@@ -220,62 +221,74 @@ Vector2 SimulationController::calculateGravAttAcceleration(std::unique_ptr<Parti
         double distance = pos.distanceTo(otherPos);
         double radii = particle->radius + otherP->radius;
         Vector2 dir = pos.directionTo(otherPos, distance);
-        // if ((radii/gravCalcDistTol < distance) 
-        //     && (distance < radii*gravCalcDistTol)) {
-        //         continue;
-        // } else {
-            double accDirect = (G_const*otherP->mass)/(distance*distance);
-            Vector2 testy = particle->velocity + accDirect* dir * timestepScaled;
-            Vector2 futurePos = Vector2(particle->getPosition()) + testy*timestepScaled;
-            double newDist = futurePos.distanceTo(otherP->getPosition());
-            if (newDist < radii*gravCalcDistTol) {
-                totalAccVec -= accDirect * dir;
-            } else if (newDist > radii/gravCalcDistTol) {
-                totalAccVec += accDirect * dir;
-            }
-            // if (distance - accDirect * timestepScaled < radii*gravCalcDistTol) {
-            //     totalAccVec = 0;
-            // } else {
-            //     totalAccVec += accDirect * dir;
-            // }
-        // }
+        
+        double accDirect = (G_const*otherP->mass)/(distance*distance);
+        if (distance < radii*gravCalcDistTol) {
+            // dir * distance
+            // particle->setPosition(pos + dir*(distance - otherP->radius - particle->radius));
+            // particle->velocity 
+            // totalAccVec -= accDirect * dir;
+        } else if (distance > radii*gravCalcDistTol) {
+            totalAccVec += accDirect * dir;
+        }
          
     }
-
+    particle->totalAcc = totalAccVec;
     // std::cout << "Total Force: " << totalForceVec << std::endl;
     return totalAccVec;
 }
 
-Vector2 SimulationController::calculateCollisions(std::unique_ptr<Particle>& particle, double const& timestepScaled) {
-    Vector2 futurePos = particle->calculateFuturePos(timestepScaled);
-    Vector2 collisionVel = particle->velocity;
+void SimulationController::resolveCollision(std::unique_ptr<Particle>& particle, double const& timestepScaled) {
+    // Vector2 pos = particle->calculateFuturePos(timestepScaled);
+    Vector2 pos = particle->getPosition();
+    
     for (auto& otherP : particles) {
         if (particle == otherP) continue;
-        if (futurePos.distanceToSq(otherP->getPosition()) > maxRadius*maxRadius+5) {
+        double radii = (particle->radius + otherP->radius);
+        double distance = pos.distanceToSq(otherP->getPosition());
+        if (distance > radii * radii) {
             continue;
         }
-        double radii = (particle->radius + otherP->radius) *gravCalcDistTol;
-        if (futurePos.distanceTo(otherP->getPosition()) < radii) {
-            Vector2 v3 = Vector2(0, 0);
-            if (isBouncy) {
-                Vector2 dir = particle->getPosition().directionTo(otherP->getPosition());
-                v3 = (2 * collisionVel*particle->mass + otherP->velocity*(otherP->mass - particle->mass))/(particle->mass + otherP->mass);
-                collisionVel += otherP->mass/particle->mass*(otherP->velocity - v3);
-                collisionVel = collisionVel.magnitude()*-dir;
-                otherP->velocity = v3.magnitude()*dir;
-            }
+        Vector2 colDir = pos.directionTo(otherP->getPosition());
+        double velDir = (otherP->velocity - particle->velocity).dot(colDir);
+        if (velDir > 0) {
+            return;
         }
+        double impulseScalar = -(1 - particleBounciness) * velDir;
+        // double impulseScalar = -(1 - particleBounciness) * velDir / (particle->massInv + otherP->massInv);
+        
+        Vector2 impulse = impulseScalar * colDir;
+        
+        double massSum = particle->massInv + otherP->massInv;
+        double massRatio = particle->massInv / massSum;
+
+        particle->velocity -= massRatio * impulse;
+
+        // std::cout << "velDir: " << velDir << " | mass: " << particle->mass
+        // << " | massRatio: " << massRatio << " | impulse: " << impulse << std::endl;
+
+        massRatio = otherP->massInv / massSum;
+        otherP->velocity += massRatio * impulse;
+
+        double percent = 0.5;
+        Vector2 correction = ((radii - distance) * massSum) * percent * colDir;
+        pos -= particle->massInv * correction;
+        otherP->getPosition() += otherP->massInv * correction;
+        // std::cout << "correction: " << correction << " | mass: " << particle->mass
+        // << " | objA: " << particle->massInv * correction << " | objB: " << otherP->massInv * correction << std::endl;
     }
-    return collisionVel;
+    return;
 }
 
 void SimulationController::calculateVelocity(std::unique_ptr<Particle>& particle, const double& timestepScaled) {
+    // Vector2 colVec = resolveCollision(particle, timestepScaled);
+    // particle->velocity = colVec;
+    resolveCollision(particle, timestepScaled);
 
-    Vector2 colVec = calculateCollisions(particle, timestepScaled);
-    particle->velocity = colVec;
-
-    Vector2 gravAttAcc = calculateGravAttAcceleration(particle, timestepScaled);
-    particle->velocity += gravAttAcc * timestepScaled;
+    if (useGravitationAttraction) {
+        Vector2 gravAttAcc = calculateGravAttAcceleration(particle);
+        particle->velocity += gravAttAcc * timestepScaled;
+    }
 
     Vector2 pos = particle->getPosition();
     bool isGrounded = particle->getPosition().y + particle->radius >= bHeight;
@@ -291,12 +304,14 @@ void SimulationController::calculateVelocity(std::unique_ptr<Particle>& particle
     if (isGrounded) {
         if (particle->velocity.y > 0) {
             particle->velocity.y = -floorBounciness * particle->velocity.y;
+            particle->getPosition().y = bHeight - particle->radius;
         } else if (abs(particle->velocity.y) < 0.1) {
             particle->velocity.y = 0;
         }
     } else if (pos.y - particle->radius < 0) {
         if (particle->velocity.y < 0) {
             particle->velocity.y = -floorBounciness * particle->velocity.y;
+            particle->getPosition().y = particle->radius;
         } else if (abs(particle->velocity.y) < 0.1) {
             particle->velocity.y = 0;
         }
@@ -305,12 +320,14 @@ void SimulationController::calculateVelocity(std::unique_ptr<Particle>& particle
     if (pos.x - particle->radius < 0) {
         if (particle->velocity.x < 0) {
             particle->velocity.x = -floorBounciness * particle->velocity.x;
+            particle->getPosition().x = particle->radius;
         } else if (abs(particle->velocity.x) < 0.1) {
             particle->velocity.x = 0;
         }
     } else if (pos.x + particle->radius > bWidth) {
         if (particle->velocity.x > 0) {
             particle->velocity.x = -floorBounciness * particle->velocity.x;
+            particle->getPosition().x = bWidth - particle->radius;
         } else if (abs(particle->velocity.x) < 0.1) {
             particle->velocity.x = 0;
         }

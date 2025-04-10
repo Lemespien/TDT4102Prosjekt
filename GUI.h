@@ -23,12 +23,14 @@ class SimulationWindow : public TDT4102::AnimationWindow
         int drawInterval = 1;
         int drawIntCounter = 0;
         
+        bool showDebug = false;
+
         Stopwatch sw;
         std::string configPath = "orbital.lemesave";
         // Medlemsfunksjoner
         void draw_particles();
         void handle_input();
-        
+        void toggleDebug();
     public:
         // konstruktør
         SimulationWindow(int x, int y, const std::string& title);
