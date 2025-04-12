@@ -13,6 +13,7 @@ useGravitationAttraction
 <double>
 timestepScaling
 0.2
+
 </>
 
 //pos=(x, y) speed=(x, y) mass=m radius=r

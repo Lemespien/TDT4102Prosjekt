@@ -19,7 +19,7 @@ Particle& SimulationController::createParticle(Vector2 spawn_position, Vector2 v
 }
 
 void SimulationController::randomSpawn() {
-    std::cout << "randomSpawn" << std::endl;
+    // std::cout << "randomSpawn" << std::endl;
     std::random_device dev;
     std::mt19937 rng(dev());
 
@@ -64,12 +64,15 @@ void SimulationController::randomSpawn() {
         positions.push_back(pos);
         Vector2 dir = Vector2(distD(rng) == 1 ? 1 : -1, distD(rng) == 1 ? 1 : -1 );
         Vector2 vel = Vector2(distV(rng), distV(rng))*dir;
-        double radiusRatio = double(radius)/double(maxRadius);
+        double radiusRatio = 1;
+        if (massBasedRadius) {
+            radiusRatio = double(radius)/double(maxRadius);
+        }
         // std::cout << "pos: " << pos << " | vel: " << vel << " | radius: " << radius <<  " | mass: " << maxMass*radiusRatio << std::endl;
         createParticle(pos, vel, maxMass*radiusRatio, static_cast<int>(radius));
 
     }
-    std::cout << "finished spawning: " << particles.size() << std::endl;
+    // std::cout << "finished spawning: " << particles.size() << std::endl;
 }
 
 void SimulationController::markParticleForRemoval(std::unique_ptr<Particle> ptr_particle) {
@@ -89,49 +92,37 @@ void SimulationController::toggleConstantGravity() {
 
 template <typename T> bool SimulationController::loadingLoop(std::ifstream& f, 
     std::string& line,
-    const std::string toFind, 
-    const std::vector<std::string>& settings,
+    const std::string toFind,
     std::map<std::string, T>& settingVarMap
 ) {
 
     if (line.find(toFind) == std::string::npos) {
         return false;
     }
-    for (auto& s : settings) {
+    do
+    {
         std::getline(f, line); // Get setting name
-        if (s == line) {
-            std::getline(f, line); // Get setting value
-            std::istringstream iss2(line);
-            iss2 >> this->*settingVarMap[s];
-        } else if (s == "</>") {
-            return true;
+        
+        for (auto s : settingVarMap) {
+            if (s.first == line) {
+                std::getline(f, line); // Get setting value
+                std::istringstream iss2(line);
+                iss2 >> this->*settingVarMap[s.first];
+            } else if (line == "</>") {
+                return true;
+            }
         }
-    }
+    } while (line != "</>");
+    
     return true;
 }
 
-
-void SimulationController::load(const std::string& path) {
-    reset(); // we always want to reset everything before we load.
-    std::cout << "loading" << std::endl;
+void SimulationController::load(const std::string& path, bool isDefault) {
+    if (!isDefault) {
+        reset(); // we always want to reset everything before we load.
+    }
+    // std::cout << "loading: " << path << std::endl;
     std::ifstream f(path);
-    std::map<std::string, bool SimulationController::*> boolMap {
-        {"useConstantGravity", &SimulationController::useConstantGravity},
-        {"useBoundingBox", &SimulationController::useBoundingBox},
-        {"isBouncy", &SimulationController::isBouncy},
-        {"useGravitationAttraction", &SimulationController::useGravitationAttraction},
-        {"random", &SimulationController::random}
-    };
-
-    std::map<std::string, double SimulationController::*> doubleMap {
-        {"timestepScaling", &SimulationController::timestepScaling},
-        {"floorBounciness", &SimulationController::floorBounciness},
-    };
-
-    std::map<std::string, int SimulationController::*> intMap {
-        {"count", &SimulationController::count},
-        {"interval", &SimulationController::interval}
-    };
 
     std::string line;
     bool loadingParticles = false;
@@ -142,13 +133,16 @@ void SimulationController::load(const std::string& path) {
     {
         while (std::getline(f, line)) {
             if (!loadedBool) {
-                loadedBool = loadingLoop<bool SimulationController::*>(f, line, std::string("<bool>"), boolSettings, boolMap);
+                loadedBool = loadingLoop<bool SimulationController::*>(f, line, std::string("<bool>"), boolMap);
+                // std::cout << "loading bool" << std::endl;
             }
             if (!loadedDouble) {
-                loadedDouble = loadingLoop<double SimulationController::*>(f, line, std::string("<double>"), doubleSettings, doubleMap);
+                loadedDouble = loadingLoop<double SimulationController::*>(f, line, std::string("<double>"), doubleMap);
+                // std::cout << "loading double" << std::endl;
             }
             if (!loadedInt) {
-                loadedInt = loadingLoop<int SimulationController::*>(f, line, std::string("<int>"), intSettings, intMap);
+                loadedInt = loadingLoop<int SimulationController::*>(f, line, std::string("<int>"), intMap);
+                // std::cout << "loading int" << std::endl;
             }
            
             if (loadingParticles) {
@@ -178,12 +172,13 @@ void SimulationController::load(const std::string& path) {
 }
 
 void SimulationController::loadDefault() {
-    load(defaultConfig);
+    load(defaultConfig, true);
     std::cout << "Loading default config." << std::endl;
 }
 
 void SimulationController::reset() {
     particles.clear();
+    loadDefault();
 }
 
 // void SimulationController::removeParticle(std::unique_ptr<Particle> ptr_particle) {

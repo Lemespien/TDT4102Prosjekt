@@ -14,26 +14,34 @@ using namespace leme_sim;
 
 class SimulationController {
     private:
-        const std::vector<std::string> boolSettings {
-            "useConstantGravity",
-            "useBoundingBox",
-            "isBouncy",
-            "useGravitationAttraction",
+        std::map<std::string, bool SimulationController::*> boolMap {
+            {"useConstantGravity", &SimulationController::useConstantGravity},
+            {"useBoundingBox", &SimulationController::useBoundingBox},
+            {"isBouncy", &SimulationController::isBouncy},
+            {"useGravitationAttraction", &SimulationController::useGravitationAttraction},
+            {"random", &SimulationController::random},
+            {"isPaused", &SimulationController::isPaused},
+            {"massBasedRadius", &SimulationController::massBasedRadius},
         };
-        
-        const std::vector<std::string> doubleSettings {
-            "timestepScaling",
-            "floorBounciness"
+        std::map<std::string, double SimulationController::*> doubleMap {
+            {"timestepScaling", &SimulationController::timestepScaling},
+            {"floorBounciness", &SimulationController::floorBounciness},
+            {"particleBounciness", &SimulationController::particleBounciness},
+            {"minVel", &SimulationController::minVel},
+            {"maxVel", &SimulationController::maxVel},
+            {"minMass", &SimulationController::minMass},
+            {"maxMass", &SimulationController::maxMass},
         };
-        
-        const std::vector<std::string> intSettings {
-            "count",
-            "interval",
-            "random"
+        std::map<std::string, int SimulationController::*> intMap {
+            {"count", &SimulationController::count},
+            {"interval", &SimulationController::interval},
+            {"minRadius", &SimulationController::minRadius},
+            {"maxRadius", &SimulationController::maxRadius},
         };
+
         std::vector<std::unique_ptr<Particle>> particles;
         std::vector<std::unique_ptr<Particle>> particlesMarkedForRemoval;
-        const std::string defaultConfig = "default.lemesave";
+        const std::string defaultConfig = "./savefiles/default.lemesave";
         int bWidth, bHeight;
 
         static constexpr double gravCalcDistTol = 1.1;
@@ -50,6 +58,7 @@ class SimulationController {
         double timestepScaling = 1;
         double floorBounciness = 0.45;
         double particleBounciness = 0.5;
+
         bool useConstantGravity = false;
         bool useGravitationAttraction = true;
         bool isBouncy = true;
@@ -67,6 +76,7 @@ class SimulationController {
         double minMass = 1e3;
         double maxMass = 2.5e3;
         bool random = false;
+        bool massBasedRadius = true;
 
     public:
         bool isPaused = false;
@@ -82,7 +92,7 @@ class SimulationController {
         void step(double timestep = -1);
         void toggleRunState();
         void toggleConstantGravity();
-        void load(const std::string& path);
+        void load(const std::string& path, bool isDefault = false);
         void loadDefault();
         void reset();
         
@@ -90,6 +100,5 @@ class SimulationController {
         bool loadingLoop(std::ifstream& f, 
             std::string& line,
             const std::string toFind, 
-            const std::vector<std::string>& settings,
             std::map<std::string, T>& settingVarMap);
 };

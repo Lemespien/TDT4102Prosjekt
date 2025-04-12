@@ -1,8 +1,8 @@
 #include "GUI.h"
 
 SimulationWindow::SimulationWindow(int x, int y, const std::string& title) : 
-    AnimationWindow{x, y, width, height, title},
-    sc{width, height}
+    AnimationWindow{x, y, defaultWidth, defaultHeight, title},
+    sc{defaultWidth, defaultHeight}
 {
 }
 
@@ -12,6 +12,14 @@ const std::string &SimulationWindow::getConfigPath(){
 
 void SimulationWindow::createUI()
 {
+    auto dropDown = UI.createLoadingMenu();
+    std::function<void()> loadCallback = [this, dropDown]() {
+        this->configPath = dropDown->getSelectedValue();
+        handleLoadDropdown(this->configPath);
+    };
+    dropDown->setCallback(loadCallback);
+    add(*dropDown);
+    
     // https://stackoverflow.com/questions/20353210/what-is-the-purpose-of-stdfunction-and-how-do-i-use-it
     std::function<void()> callback = [this]() {resetButtonClicked();};
     TDT4102::Button& resetButton = UI.createButton("Reset", callback);
@@ -20,13 +28,6 @@ void SimulationWindow::createUI()
     callback = [this]() {exitButtonClicked();};
     TDT4102::Button& exitButton = UI.createButton("Exit", callback);
     add(exitButton);
-    auto dropDown = UI.createLoadingMenu();
-    std::function<void()> loadCallback = [this, dropDown]() {
-        std::string filepath = dropDown->getSelectedValue();
-        handleLoadDropdown(filepath);
-    };
-    dropDown->setCallback(loadCallback);
-    add(*dropDown);
     
 }
 
@@ -40,7 +41,6 @@ void SimulationWindow::run(std::string &configPath)
             }
             try{
                 // Load funksjonalitet
-                sc.reset(); // Remove all the old stuff
                 sc.load(configPath);
                 this->configPath = configPath;
             }
@@ -59,18 +59,11 @@ void SimulationWindow::run(std::string &configPath)
             // An attempt at limiting draw calls compared to "physics" calculations.
             // this is currently frame rate dependent.... which means lower FPS == choppier movement
             // Doesnt change much atm. Time is better spent optimizing physics calculations.
-            // if (!paintMode) {
-            //     keep_previous_frame(false);
-            // }
-            draw_particles();
-            if (sc.isPaused) {
-                // magic placement numbers that totaly work for all window sizes.... /s
-                draw_rectangle(TDT4102::Point(width/2-275, height/2-5), 560, 60);
-                draw_text(TDT4102::Point(width/2-265, height/2), "Paused - Press space to unpause", TDT4102::Color::black, 40U);
+            if (!paintMode) {
+                keep_previous_frame(false);
             }
-            // if (paintMode) {
-            //     keep_previous_frame(true);
-            // }
+            draw_particles();
+            draw_ui();
             drawIntCounter = 0;
         // }
         handle_input();
@@ -128,11 +121,29 @@ void SimulationWindow::draw_debug(TDT4102::Point pCenter, int const& radius, Vec
             // draw_line(intPos, TDT4102::Point(intPos.x + log10(particle->totalAcc.x), intPos.y + log10(particle->totalAcc.y)), colorsVector.at(count));
 }
 
+void SimulationWindow::draw_ui(){
+    int uiCount = 0;
+    int uiWidth = 300;
+    if (sc.isPaused) {
+        draw_text(TDT4102::Point(width() - uiWidth + 10, 25*uiCount), "Paused - Press (Space) to unpause", TDT4102::Color::black, 20U);
+        uiCount++;
+        // magic placement numbers that totaly work for all window sizes.... /s
+        // draw_rectangle(TDT4102::Point(width() - 265, 0), 265, 30 * uiCount);
+    }
+    if (paintMode) {
+        keep_previous_frame(true);
+        draw_text(TDT4102::Point(width() - uiWidth + 10, 25*uiCount), "Paint mode active - (P)", TDT4102::Color::black, 20U);
+        uiCount++;
+    }
+    draw_rectangle(TDT4102::Point(width() - uiWidth, 0), uiWidth, 30*uiCount);
+}
+
 void SimulationWindow::handle_input() {
     bool current_0_state = is_key_down(KeyboardKey::SPACE); // Pause
     bool current_1_state = is_key_down(KeyboardKey::R); // Reset
     bool current_2_state = is_key_down(KeyboardKey::T); // Debug
     bool current_3_state = is_key_down(KeyboardKey::P); // Paint mode
+    bool current_4_state = is_key_down(KeyboardKey::M); // Menu
 
     if (current_0_state) {
         if (!inputHeld) {
@@ -152,6 +163,11 @@ void SimulationWindow::handle_input() {
     } else if (current_3_state) {
         if (!inputHeld) {
             paintMode = !paintMode;
+            inputHeld = true;
+        }
+    } else if (current_4_state) {
+        if (!inputHeld) {
+            UI.toggleUI();
             inputHeld = true;
         }
     } else if (inputHeld) {

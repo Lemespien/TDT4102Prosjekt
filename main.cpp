@@ -19,12 +19,11 @@ int main() {
     TDT4102::Point start_point{50, 50};
     SimulationWindow sw{start_point.x, start_point.y, "Simulation"};
     // UI.create_UI();
-    std::string configPath = "./savefiles/save1.lemesave";
+    std::string configPath = "./savefiles/orbital.lemesave";
     stopwatch.start();
 
     sw.createUI();
     sw.run(configPath);
-    
     double timeElapsed = stopwatch.stop();
     double averageFPS = sw.runCount / timeElapsed;
     std::cout << "Run time: " << timeElapsed << " | avgFPS: " << averageFPS << std::endl;

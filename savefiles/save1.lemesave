@@ -8,22 +8,43 @@ isBouncy
 1
 useGravitationAttraction
 1
+isPaused
+1
+massBasedradius
+1
 random
 1
 </>
 
 <double>
 timestepScaling
-0.25
+0.2
 floorBounciness
-0.4
+0.45
+particleBounciness
+0.5
+minVel
+0
+maxVel
+20
+minMass
+5
+maxMass
+25
 </>
 
 <int>
-count
+interval
 50
+count
+100
+minRadius
+3
+maxRadius
+10
 </>
+
 
 //pos=(x, y) speed=(x, y) mass=m radius=r
 <particles>
-</>
+</particles>

@@ -30,18 +30,18 @@ maxVel
 minMass
 5
 maxMass
-10
+25
 </>
 
 <int>
 interval
 50
 count
-1000
+0
 minRadius
-1
+3
 maxRadius
-2
+10
 </>
 
 

@@ -13,14 +13,14 @@ class SimulationWindow : public TDT4102::AnimationWindow
         // Konstanter for grafikkvinduet
         static constexpr int button_width = 80;
         static constexpr int button_height = 40;
-        static constexpr int width = 1600;
-        static constexpr int height = 900;
+        static constexpr int defaultWidth = 1600;
+        static constexpr int defaultHeight = 900;
         static constexpr double smoothing = 0.85;
         bool simulation_running = false;
         bool inputHeld = false;
         int drawInterval = 1;
         int drawIntCounter = 0;
-        
+    
         bool showDebug = false;
         bool paintMode = false;
 
@@ -29,6 +29,7 @@ class SimulationWindow : public TDT4102::AnimationWindow
         // Medlemsfunksjoner
         void draw_particles();
         void draw_debug(TDT4102::Point pCenter, int const& radius, Vector2 const& acc, Vector2 const& vel, int const& count = 0);
+        void draw_ui();
         void handle_input();
         void toggleDebug();
         void resetButtonClicked();
