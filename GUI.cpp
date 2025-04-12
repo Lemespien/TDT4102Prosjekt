@@ -20,6 +20,14 @@ void SimulationWindow::createUI()
     callback = [this]() {exitButtonClicked();};
     TDT4102::Button& exitButton = UI.createButton("Exit", callback);
     add(exitButton);
+    auto dropDown = UI.createLoadingMenu();
+    std::function<void()> loadCallback = [this, dropDown]() {
+        std::string filepath = dropDown->getSelectedValue();
+        handleLoadDropdown(filepath);
+    };
+    dropDown->setCallback(loadCallback);
+    add(*dropDown);
+    
 }
 
 
@@ -164,4 +172,8 @@ void SimulationWindow::resetButtonClicked() {
 
 void SimulationWindow::exitButtonClicked() {
     close();
+}
+
+void SimulationWindow::handleLoadDropdown(const std::string& filepath) {
+    sc.load(filepath);
 }

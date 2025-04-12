@@ -19,14 +19,9 @@ int main() {
     TDT4102::Point start_point{50, 50};
     SimulationWindow sw{start_point.x, start_point.y, "Simulation"};
     // UI.create_UI();
-    std::string configPath = "save1.lemesave";
+    std::string configPath = "./savefiles/save1.lemesave";
     stopwatch.start();
-    // const TDT4102::Point buttonPosition {100, 100};
-    // const unsigned int buttonWidth = 100;
-    // const unsigned int buttonHeight = 40;
-    // const std::string buttonLabel = "Click me!";
-    // TDT4102::Button button {buttonPosition, buttonWidth, buttonHeight, buttonLabel};
-    // sw.add(button);
+
     sw.createUI();
     sw.run(configPath);
     

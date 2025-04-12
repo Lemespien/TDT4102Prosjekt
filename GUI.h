@@ -25,7 +25,7 @@ class SimulationWindow : public TDT4102::AnimationWindow
         bool paintMode = false;
 
         Stopwatch stopwatch;
-        std::string configPath = "orbital.lemesave";
+        std::string configPath = "./savefiles/orbital.lemesave";
         // Medlemsfunksjoner
         void draw_particles();
         void draw_debug(TDT4102::Point pCenter, int const& radius, Vector2 const& acc, Vector2 const& vel, int const& count = 0);
@@ -33,6 +33,7 @@ class SimulationWindow : public TDT4102::AnimationWindow
         void toggleDebug();
         void resetButtonClicked();
         void exitButtonClicked();
+        void handleLoadDropdown(const std::string& filepath);
     public:
     // konstruktør
         SimulationWindow(int x, int y, const std::string& title);
