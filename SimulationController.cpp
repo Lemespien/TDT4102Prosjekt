@@ -19,6 +19,7 @@ Particle& SimulationController::createParticle(Vector2 spawn_position, Vector2 v
 }
 
 void SimulationController::randomSpawn() {
+    std::cout << "randomSpawn" << std::endl;
     std::random_device dev;
     std::mt19937 rng(dev());
 
@@ -64,10 +65,11 @@ void SimulationController::randomSpawn() {
         Vector2 dir = Vector2(distD(rng) == 1 ? 1 : -1, distD(rng) == 1 ? 1 : -1 );
         Vector2 vel = Vector2(distV(rng), distV(rng))*dir;
         double radiusRatio = double(radius)/double(maxRadius);
-        std::cout << "pos: " << pos << " | vel: " << vel << " | radius: " << radius <<  " | mass: " << maxMass*radiusRatio << std::endl;
+        // std::cout << "pos: " << pos << " | vel: " << vel << " | radius: " << radius <<  " | mass: " << maxMass*radiusRatio << std::endl;
         createParticle(pos, vel, maxMass*radiusRatio, static_cast<int>(radius));
 
     }
+    std::cout << "finished spawning: " << particles.size() << std::endl;
 }
 
 void SimulationController::markParticleForRemoval(std::unique_ptr<Particle> ptr_particle) {
@@ -77,7 +79,7 @@ void SimulationController::markParticleForRemoval(std::unique_ptr<Particle> ptr_
 }
 
 void SimulationController::toggleRunState() {
-    isPaused = isPaused ? false : true;
+    isPaused = !isPaused;
 }
 
 
@@ -110,8 +112,8 @@ template <typename T> bool SimulationController::loadingLoop(std::ifstream& f,
 
 
 void SimulationController::load(const std::string& path) {
-    
     reset(); // we always want to reset everything before we load.
+    std::cout << "loading" << std::endl;
     std::ifstream f(path);
     std::map<std::string, bool SimulationController::*> boolMap {
         {"useConstantGravity", &SimulationController::useConstantGravity},
@@ -167,6 +169,7 @@ void SimulationController::load(const std::string& path) {
                 continue;
             }
         }
+        randomSpawn();
     }
     catch(const std::exception& e)
     {
@@ -186,29 +189,24 @@ void SimulationController::reset() {
 // void SimulationController::removeParticle(std::unique_ptr<Particle> ptr_particle) {
 //     // TODO: implement removal
 // }
+double prevTimestep = 0;
 void SimulationController::step(double timestep) {
 
     if (isPaused) {
         return;
     }
-    
-    // Basic spawning functionality
-    if (false && countTracker <= count && intervalTracker >= interval) {
-        createParticle(Vector2(10 + countTracker*25 % bWidth, 20), Vector2(0, gravity_acc_e));
-        countTracker++;
-        intervalTracker = 0;
-    } else {
-        intervalTracker++;
-    }
-
     double timestepScaled = timestep * timestepScaling;
     for (auto& particle : particles) {
-    
+        // if (isnan(particle->getPosition().x)) {
+        //     isPaused = true;
+        //     break;
+        // }
         calculateVelocity(particle, timestepScaled);
         Vector2 futurePos = particle->calculateFuturePos(timestepScaled);
         // std::cout << "vel: " << particle->velocity << std::endl;
         particle->setPosition(futurePos);
     }
+    prevTimestep = timestepScaled;
 }
 
 
@@ -233,7 +231,7 @@ Vector2 SimulationController::calculateGravAttAcceleration(std::unique_ptr<Parti
         }
          
     }
-    particle->totalAcc = totalAccVec;
+    particle->acceleration = totalAccVec;
     // std::cout << "Total Force: " << totalForceVec << std::endl;
     return totalAccVec;
 }

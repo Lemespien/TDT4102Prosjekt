@@ -33,7 +33,7 @@ struct Vector2 {
         return pow(x, 2) + pow(y, 2);
     }
 
-    double magnitude() {
+    double magnitude() const {
         return sqrt(pow(x, 2) + pow(y, 2));
     }
 
@@ -47,7 +47,7 @@ struct Vector2 {
         return Vector2(-dirNorm.y, dirNorm.x);
     }
     
-    Vector2 normalize() {
+    Vector2 normalize() const {
         return Vector2(x, y)/magnitude();
     }
 
