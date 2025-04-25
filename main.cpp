@@ -14,6 +14,7 @@
 int main() {
     // Show a nice message in the Terminal window
     cout << "Hello, World!" << endl;
+
     // Vector2Test();
     Stopwatch stopwatch;
     TDT4102::Point start_point{50, 50};
@@ -21,7 +22,6 @@ int main() {
     // UI.create_UI();
     std::string configPath = "./savefiles/orbital.lemesave";
     stopwatch.start();
-
     sw.createUI();
     sw.run(configPath);
     double timeElapsed = stopwatch.stop();

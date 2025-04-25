@@ -63,7 +63,7 @@ void SimulationWindow::run(std::string &configPath)
                 keep_previous_frame(false);
             }
             draw_particles();
-            draw_ui();
+            draw_ui_notifications();
             drawIntCounter = 0;
         // }
         handle_input();
@@ -121,21 +121,20 @@ void SimulationWindow::draw_debug(TDT4102::Point pCenter, int const& radius, Vec
             // draw_line(intPos, TDT4102::Point(intPos.x + log10(particle->totalAcc.x), intPos.y + log10(particle->totalAcc.y)), colorsVector.at(count));
 }
 
-void SimulationWindow::draw_ui(){
+void SimulationWindow::draw_ui_notifications(){
     int uiCount = 0;
-    int uiWidth = 300;
     if (sc.isPaused) {
-        draw_text(TDT4102::Point(width() - uiWidth + 10, 25*uiCount), "Paused - Press (Space) to unpause", TDT4102::Color::black, 20U);
+        draw_text(TDT4102::Point(width() - uiNotificationWidth + 10, 25*uiCount), "Paused - Press (Space) to unpause", TDT4102::Color::black, 20U);
         uiCount++;
         // magic placement numbers that totaly work for all window sizes.... /s
         // draw_rectangle(TDT4102::Point(width() - 265, 0), 265, 30 * uiCount);
     }
     if (paintMode) {
         keep_previous_frame(true);
-        draw_text(TDT4102::Point(width() - uiWidth + 10, 25*uiCount), "Paint mode active - (P)", TDT4102::Color::black, 20U);
+        draw_text(TDT4102::Point(width() - uiNotificationWidth + 10, 25*uiCount), "Paint mode active - (P)", TDT4102::Color::black, 20U);
         uiCount++;
     }
-    draw_rectangle(TDT4102::Point(width() - uiWidth, 0), uiWidth, 30*uiCount);
+    draw_rectangle(TDT4102::Point(width() - uiNotificationWidth, 0), uiNotificationWidth, 30*uiCount);
 }
 
 void SimulationWindow::handle_input() {
@@ -144,6 +143,57 @@ void SimulationWindow::handle_input() {
     bool current_2_state = is_key_down(KeyboardKey::T); // Debug
     bool current_3_state = is_key_down(KeyboardKey::P); // Paint mode
     bool current_4_state = is_key_down(KeyboardKey::M); // Menu
+    bool isLeftMouseDown = is_left_mouse_button_down();
+
+    if (isLeftMouseDown && !isLeftMouseStarted && !mCP.inProgress) {
+        isLeftMouseStarted = true;
+        // mCP.isCreated = false;
+        mCP.start = get_mouse_coordinates();
+        if (mCP.start.x < 600 && mCP.start.y < 41) {
+            std::cout << "UI ZONE! ABORT ABORT" << std::endl;
+            isLeftMouseStarted = false;
+            mCP.inProgress = false;
+        } else {
+            mCP.inProgress = true;
+        }
+        // std::cout << "Start x:" << mouseStartPos.x << " | y: " << mouseStartPos.y << std::endl;
+    } else if (isLeftMouseDown && isLeftMouseStarted) {
+        mCP.end = get_mouse_coordinates();
+        // std::cout << "During x:" << mouseEndPos.x << " | y: " << mouseEndPos.y << std::endl;
+        mCP.radius = mCP.start.distanceTo(mCP.end);
+    } else if (!isLeftMouseDown && isLeftMouseStarted) {
+        // std::cout << "End x: " << mouseEndPos.x << " | y: " << mouseEndPos.y << std::endl;
+        isLeftMouseStarted = false;
+        if (mCP.radius > 1) {
+            mCP.mass = 4e17*std::min(mCP.radius/50.0, 1.0);
+            mCP.inProgress = true;
+        } else {
+            mCP.inProgress = false;
+        }
+    } else if(isLeftMouseDown && !isLeftMouseStarted && mCP.inProgress) {
+        // mCP.inProgress = false;
+        // mCP.dir = mCP.end - mCP.start;
+        // mCP.isCreated = true;
+        Vector2 velVec = mCP.velVecEndPos - mCP.start;
+        // Vector2 velVec = mCP.start.directionTo(mCP.velVecEndPos);
+
+        // double magnitude = mCP.start.distanceTo(velVec);
+        // Vector2 velDir = mCP.start.directionTo(velVec, magnitude);
+        sc.createParticle(mCP.start, velVec*2, mCP.mass, mCP.radius);
+        std::cout << "radius: " << mCP.radius << " | mass: " << mCP.mass 
+            << " | exp: " << 4e17*std::min(double(mCP.radius)/50.0, 1.0) 
+            << " | vel: " << velVec*2
+            << std::endl;
+        // mCP.inProgress = false;
+        mCP = MouseCreatedParticle{};
+    }
+
+
+    if (mCP.inProgress) {
+        draw_circle(TDT4102::Point(mCP.start.x, mCP.start.y), mCP.radius);
+        mCP.velVecEndPos = get_mouse_coordinates();
+        draw_line(TDT4102::Point(mCP.start.x, mCP.start.y), TDT4102::Point(mCP.velVecEndPos.x, mCP.velVecEndPos.y));
+    }
 
     if (current_0_state) {
         if (!inputHeld) {

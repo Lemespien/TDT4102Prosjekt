@@ -5,6 +5,16 @@
 #include "Stopwatch.h"
 #include "ColorsVector.h"
 #include "SimulationController.h"
+#include <algorithm>
+
+struct MouseCreatedParticle {
+    Vector2 start;
+    Vector2 end;
+    Vector2 velVecEndPos = Vector2();
+    double radius = 5;
+    double mass = 10;
+    bool inProgress = false;
+};
 
 class SimulationWindow : public TDT4102::AnimationWindow
 {
@@ -15,9 +25,16 @@ class SimulationWindow : public TDT4102::AnimationWindow
         static constexpr int button_height = 40;
         static constexpr int defaultWidth = 1600;
         static constexpr int defaultHeight = 900;
+        static constexpr int uiNotificationWidth = 300;
+
         static constexpr double smoothing = 0.85;
+
         bool simulation_running = false;
         bool inputHeld = false;
+        bool isLeftMouseStarted = false;
+        MouseCreatedParticle mCP;
+        TDT4102::Point mouseStartPos;
+        TDT4102::Point mouseEndPos;
         int drawInterval = 1;
         int drawIntCounter = 0;
     
@@ -29,7 +46,7 @@ class SimulationWindow : public TDT4102::AnimationWindow
         // Medlemsfunksjoner
         void draw_particles();
         void draw_debug(TDT4102::Point pCenter, int const& radius, Vector2 const& acc, Vector2 const& vel, int const& count = 0);
-        void draw_ui();
+        void draw_ui_notifications();
         void handle_input();
         void toggleDebug();
         void resetButtonClicked();

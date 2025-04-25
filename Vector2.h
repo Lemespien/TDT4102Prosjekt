@@ -50,6 +50,10 @@ struct Vector2 {
     Vector2 normalize() const {
         return Vector2(x, y)/magnitude();
     }
+    Vector2(const TDT4102::Point& point) {
+        x = point.x;
+        y = point.y;
+    }
 
     Vector2 operator+(double a) const {
         return Vector2(x + a, y + a);

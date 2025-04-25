@@ -1,15 +1,10 @@
 #pragma once
-#include "widgets/TextInput.h"
 #include "widgets/Button.h"
 #include "widgets/DropdownList.h"
-#include <functional>
 #include <memory>
-#include <fstream>
-#include <sstream>
 #include <filesystem>
 #include <iostream>
 #include <variant>
-
 
 using UIElementVariant = std::variant<std::shared_ptr<TDT4102::Button>, std::shared_ptr<TDT4102::DropdownList>>;
 class UIManager {
