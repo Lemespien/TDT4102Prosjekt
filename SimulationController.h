@@ -44,7 +44,7 @@ class SimulationController {
         const std::string defaultConfig = "./savefiles/default.lemesave";
         int bWidth, bHeight;
 
-        static constexpr double gravCalcDistTol = 1.1;
+        static constexpr double gravCalcDistTol = 1.02;
         /* ----------------------------
         NOTE:
 

@@ -25,7 +25,7 @@ struct Vector2 {
         return dir/magnitude;
     }
 
-    bool isNonZero() {
+    bool isNonZero() const {
         return x != 0 || y != 0;
     }
 
@@ -38,7 +38,11 @@ struct Vector2 {
     }
 
     double dot(Vector2& rhs) const {
-        return x + rhs.x + y + rhs.y;
+        return x * rhs.x + y * rhs.y;
+    }
+
+    Vector2 cross(Vector2& rhs) {
+        return Vector2(x*rhs.y, 2);
     }
 
     Vector2 normal(Vector2& rhs) {
@@ -48,7 +52,12 @@ struct Vector2 {
     }
     
     Vector2 normalize() const {
-        return Vector2(x, y)/magnitude();
+        double magnitude = this->magnitude();
+        if (magnitude == 0) {
+            std::cout << "normalize failed" << std::endl;
+            return Vector2(0, 0);
+        }
+        return Vector2(x, y)/magnitude;
     }
     Vector2(const TDT4102::Point& point) {
         x = point.x;

@@ -20,7 +20,7 @@ int main() {
     TDT4102::Point start_point{50, 50};
     SimulationWindow sw{start_point.x, start_point.y, "Simulation"};
     // UI.create_UI();
-    std::string configPath = "./savefiles/orbital.lemesave";
+    std::string configPath = "./savefiles/testy.lemesave";
     stopwatch.start();
     sw.createUI();
     sw.run(configPath);

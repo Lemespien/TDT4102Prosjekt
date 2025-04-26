@@ -207,70 +207,47 @@ void SimulationController::step(double timestep) {
 
 Vector2 SimulationController::calculateGravAttAcceleration(std::unique_ptr<Particle>& particle) {
     Vector2& pos = particle->getPosition();
-    Vector2 totalAccVec = Vector2();
+    Vector2 totalAccVec = Vector2(0, 0);
     for (auto& otherP : particles) {
         if (particle == otherP) continue;
         Vector2& otherPos = otherP->getPosition();
         double distance = pos.distanceTo(otherPos);
         double radii = particle->radius + otherP->radius;
-        Vector2 dir = pos.directionTo(otherPos, distance);
         
-        double accDirect = (G_const*otherP->mass)/(distance*distance);
         if (distance < radii*gravCalcDistTol) {
-            // dir * distance
-            // particle->setPosition(pos + dir*(distance - otherP->radius - particle->radius));
-            // particle->velocity 
-            // totalAccVec -= accDirect * dir;
-        } else if (distance > radii*gravCalcDistTol) {
-            totalAccVec += accDirect * dir;
+            if (distance < radii) {
+                double percent = 0.2;
+                double massSum = (particle->massInv + otherP->massInv);
+                Vector2 correction = -((pos.distanceTo(otherP->getPosition()) - radii)) / massSum * percent * pos.directionTo(otherP->getPosition());
+                pos -= particle->massInv * correction;
+                otherP->getPosition() += otherP->massInv * correction;
+            }
+            continue;
         }
-         
+        double accDirect = (G_const*otherP->mass)/(distance*distance);
+        Vector2 dir = pos.directionTo(otherPos, distance);
+        totalAccVec += accDirect * dir;
     }
-    particle->acceleration = totalAccVec;
-    // std::cout << "Total Force: " << totalForceVec << std::endl;
     return totalAccVec;
 }
-
 void SimulationController::resolveCollision(std::unique_ptr<Particle>& particle, double const& timestepScaled) {
-    // Vector2 pos = particle->calculateFuturePos(timestepScaled);
-    Vector2 pos = particle->getPosition();
+    Vector2 pos = particle->calculateFuturePos(timestepScaled);
     
     for (auto& otherP : particles) {
         if (particle == otherP) continue;
         double radii = (particle->radius + otherP->radius);
-        double distance = pos.distanceToSq(otherP->getPosition());
-        if (distance > radii * radii) {
+        
+        if (pos.distanceToSq(otherP->getPosition()) > radii * radii) {
             continue;
         }
         Vector2 colDir = pos.directionTo(otherP->getPosition());
-        double velDir = (otherP->velocity - particle->velocity).dot(colDir);
-        if (velDir > 0) {
-            return;
-        }
-        double impulseScalar = -(1 - particleBounciness) * velDir;
-        // double impulseScalar = -(1 - particleBounciness) * velDir / (particle->massInv + otherP->massInv);
-        
-        Vector2 impulse = impulseScalar * colDir;
-        
-        double massSum = particle->massInv + otherP->massInv;
-        double massRatio = particle->massInv / massSum;
-
-        particle->velocity -= massRatio * impulse;
-
-        // std::cout << "velDir: " << velDir << " | mass: " << particle->mass
-        // << " | massRatio: " << massRatio << " | impulse: " << impulse << std::endl;
-
-        massRatio = otherP->massInv / massSum;
-        otherP->velocity += massRatio * impulse;
-
-        double percent = 0.5;
-        Vector2 correction = ((radii - distance) * massSum) * percent * colDir;
-        pos -= particle->massInv * correction;
-        otherP->getPosition() += otherP->massInv * correction;
-        // std::cout << "correction: " << correction << " | mass: " << particle->mass
-        // << " | objA: " << particle->massInv * correction << " | objB: " << otherP->massInv * correction << std::endl;
+        double massSum = (particle->mass + otherP->mass);
+        Vector2 vel_3 = (2 * particle->velocity * particle->mass + otherP->velocity*(otherP->mass - particle->mass))/massSum;
+        Vector2 vel_2 = particle->velocity + otherP->mass/particle->mass*(otherP->velocity - vel_3);
+        // std::cout << "vel_2: " << vel_2 << " | vel_3: " << vel_3 << std::endl;
+        particle->velocity = vel_2;
+        otherP->velocity = vel_3;
     }
-    return;
 }
 
 void SimulationController::calculateVelocity(std::unique_ptr<Particle>& particle, const double& timestepScaled) {
@@ -279,8 +256,9 @@ void SimulationController::calculateVelocity(std::unique_ptr<Particle>& particle
     resolveCollision(particle, timestepScaled);
 
     if (useGravitationAttraction) {
-        Vector2 gravAttAcc = calculateGravAttAcceleration(particle);
-        particle->velocity += gravAttAcc * timestepScaled;
+        particle->acceleration = calculateGravAttAcceleration(particle);
+        particle->velocity += particle->acceleration * timestepScaled;
+        // std::cout << "acc: " << particle->acceleration << " | velocity: " << particle->velocity << " | vel_d: " << particle->acceleration * timestepScaled << std::endl;
     }
 
     Vector2 pos = particle->getPosition();
@@ -288,6 +266,7 @@ void SimulationController::calculateVelocity(std::unique_ptr<Particle>& particle
 
     if (useConstantGravity && (!useBoundingBox or !isGrounded)) {
         particle->velocity.y += leme_sim::gravity_acc_e * timestepScaled;
+        // std::cout << "grav: " << leme_sim::gravity_acc_e << " | velocity: " << particle->velocity << " | vel_d: " << leme_sim::gravity_acc_e * timestepScaled << std::endl;
     }
     
     if (!useBoundingBox) {
@@ -298,31 +277,35 @@ void SimulationController::calculateVelocity(std::unique_ptr<Particle>& particle
         if (particle->velocity.y > 0) {
             particle->velocity.y = -floorBounciness * particle->velocity.y;
             particle->getPosition().y = bHeight - particle->radius;
-        } else if (abs(particle->velocity.y) < 0.1) {
-            particle->velocity.y = 0;
-        }
+        } 
+        // else if (abs(particle->velocity.y) < 5.0) {
+        //     particle->velocity.y = 0;
+        // }
     } else if (pos.y - particle->radius < 0) {
         if (particle->velocity.y < 0) {
             particle->velocity.y = -floorBounciness * particle->velocity.y;
             particle->getPosition().y = particle->radius;
-        } else if (abs(particle->velocity.y) < 0.1) {
-            particle->velocity.y = 0;
-        }
+        } 
+        // else if (abs(particle->velocity.y) < 5.0) {
+        //     particle->velocity.y = 0;
+        // }
     }
 
     if (pos.x - particle->radius < 0) {
         if (particle->velocity.x < 0) {
             particle->velocity.x = -floorBounciness * particle->velocity.x;
             particle->getPosition().x = particle->radius;
-        } else if (abs(particle->velocity.x) < 0.1) {
-            particle->velocity.x = 0;
-        }
+        } 
+        // else if (abs(particle->velocity.x) < 5.0) {
+        //     particle->velocity.x = 0;
+        // }
     } else if (pos.x + particle->radius > bWidth) {
         if (particle->velocity.x > 0) {
             particle->velocity.x = -floorBounciness * particle->velocity.x;
             particle->getPosition().x = bWidth - particle->radius;
-        } else if (abs(particle->velocity.x) < 0.1) {
-            particle->velocity.x = 0;
-        }
+        } 
+        // else if (abs(particle->velocity.x) < 5.0) {
+        //     particle->velocity.x = 0;
+        // }
     }
 }

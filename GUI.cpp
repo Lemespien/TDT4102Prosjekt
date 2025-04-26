@@ -81,13 +81,34 @@ void SimulationWindow::run(std::string &configPath)
 
 void SimulationWindow::draw_particles() {
     std::size_t count = 0;
-    for (auto const& particle : sc.getParticles()) {
+    auto& particles = sc.getParticles();
+    for (auto const& particle : particles) {
         TDT4102::Point intPos = particle->getIntPosition();
         draw_circle(intPos, particle->radius, colorsVector.at(count));
         if (showDebug) {
             draw_debug(intPos, particle->radius, particle->acceleration, particle->velocity, count);
         }
         count = ++count % colorsVector.size();
+
+
+        // Vector2& pos = particle->getPosition();
+        // for (auto& otherP : particles) {
+        //     if (particle == otherP) continue;
+        //     std::cout << "Im doing stuff" << std::endl;
+        //     double radii = (particle->radius + otherP->radius);
+        //     double distance = pos.distanceToSq(otherP->getPosition());
+            
+        //     Vector2 colDir = pos.directionTo(otherP->getPosition());
+        //     double velDir = (otherP->velocity - particle->velocity).dot(colDir);
+        //     draw_line(intPos, TDT4102::Point(intPos.x + colDir.x*500, intPos.y + colDir.y*500), colorsVector.at(count));
+        //     if (velDir > 0) {
+        //         std::cout << "velDir is wrong? | " << velDir << std::endl;
+        //         continue;
+        //     }
+        //     std::cout << "velDir is correct? | " << velDir << std::endl;
+        // }
+
+
     }
 
     return;
@@ -96,29 +117,38 @@ void SimulationWindow::draw_particles() {
 void SimulationWindow::draw_debug(TDT4102::Point pCenter, int const& radius, Vector2 const& acc, Vector2 const& vel, int const& count) {
             // Acceleration logarithmic lines
             TDT4102::Point accStartPos = pCenter;
-            double accX = log(abs(acc.x));
-            double accY = log(abs(acc.y));
-            auto accVecNorm = acc.normalize();
-            Vector2 totalAccLog = Vector2(accX, accY) * accVecNorm * 15;
-            
-            
-            accStartPos.x += radius * accVecNorm.x;
-            accStartPos.y += radius * accVecNorm.y;
-            draw_line(accStartPos, TDT4102::Point(accStartPos.x + totalAccLog.x, accStartPos.y + totalAccLog.y), colorsVector.at(count));
-            
-            // Velocity logarithmic lines
-            double velX = log(abs(vel.x));
-            double velY = log(abs(vel.y));
-            
-            auto velPoint = pCenter;
-            auto velNormalized = vel.normalize();
-            Vector2 velLog = Vector2(velX, velY) * velNormalized * 15;
-            
-            velPoint.x += radius * velNormalized.x;
-            velPoint.y += radius * velNormalized.y;
+            if (acc.isNonZero()) {
+                Vector2 accLog;
+                if (acc.x != 0) {
+                    accLog.x = log(abs(acc.x));
+                }
+                if (acc.y != 0) {
+                    accLog.y = log(abs(acc.y));
+                }
+                auto accVecNorm = acc.normalize();
+                accLog = accLog * accVecNorm * 5;
+                auto accPerp = Vector2(-accVecNorm.y, accVecNorm.x) * radius/2;
+                
+                draw_triangle(TDT4102::Point(accStartPos.x + accPerp.x, accStartPos.y + accPerp.y), TDT4102::Point(accStartPos.x + accLog.x, accStartPos.y + accLog.y), TDT4102::Point(accStartPos.x - accPerp.x, accStartPos.y - accPerp.y), colorsVector.at(count));
+            } 
 
-            draw_line(velPoint, TDT4102::Point(velPoint.x + velLog.x, velPoint.y + velLog.y), colorsVector.at(count));
-            // draw_line(intPos, TDT4102::Point(intPos.x + log10(particle->totalAcc.x), intPos.y + log10(particle->totalAcc.y)), colorsVector.at(count));
+            // Velocity logarithmic lines
+            if (vel.isNonZero()) {
+                Vector2 velLog;
+                if (abs(vel.x) > 0) {
+                    velLog.x = log(abs(vel.x));
+                }
+                if (abs(vel.y)> 0) {
+                    velLog.y = log(abs(vel.y));
+                }
+                
+                auto velPoint = pCenter;
+                auto velNormalized = vel.normalize();
+                velLog = velLog * velNormalized * 5;
+
+                draw_line(velPoint, TDT4102::Point(velPoint.x + velLog.x, velPoint.y + velLog.y), colorsVector.at(count));
+                // draw_line(intPos, TDT4102::Point(intPos.x + log10(particle->totalAcc.x), intPos.y + log10(particle->totalAcc.y)), colorsVector.at(count));
+            }
 }
 
 void SimulationWindow::draw_ui_notifications(){
@@ -150,7 +180,7 @@ void SimulationWindow::handle_input() {
         // mCP.isCreated = false;
         mCP.start = get_mouse_coordinates();
         if (mCP.start.x < 600 && mCP.start.y < 41) {
-            std::cout << "UI ZONE! ABORT ABORT" << std::endl;
+            // std::cout << "UI ZONE! ABORT ABORT" << std::endl;
             isLeftMouseStarted = false;
             mCP.inProgress = false;
         } else {
@@ -164,7 +194,7 @@ void SimulationWindow::handle_input() {
     } else if (!isLeftMouseDown && isLeftMouseStarted) {
         // std::cout << "End x: " << mouseEndPos.x << " | y: " << mouseEndPos.y << std::endl;
         isLeftMouseStarted = false;
-        if (mCP.radius > 1) {
+        if (mCP.radius > 3) {
             mCP.mass = 4e17*std::min(mCP.radius/50.0, 1.0);
             mCP.inProgress = true;
         } else {

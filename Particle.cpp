@@ -42,7 +42,13 @@ void Particle::applyForce(Vector2 forceVec) {
 }
 
 Vector2& Particle::calculateFuturePos(double timestep) {
-    futurePos = position + velocity * timestep;
+    futurePos = position;
+    if (abs(velocity.x) > 1.0) {
+        futurePos.x += velocity.x * timestep;
+    }
+    if (abs(velocity.y) > 1.0) {
+        futurePos.y += velocity.y * timestep;
+    }
     // futurePos = Vector2(position.x + velocity.x * timestep, position.y + velocity.y * timestep);
     return futurePos;
 }

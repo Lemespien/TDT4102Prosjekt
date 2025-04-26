@@ -1,7 +1,7 @@
 //useConstantGravity useBoundingBox isBouncy useGravitationAttraction
 <bool>
 useConstantGravity
-0
+1
 useBoundingBox
 1
 isBouncy
@@ -24,27 +24,30 @@ floorBounciness
 particleBounciness
 0.25
 minVel
-5
+0
 maxVel
-60
+20
 minMass
-1e14
+5
 maxMass
-2e14
+25
 </>
 
 <int>
 interval
 50
 count
-100
+0
 minRadius
-4
+3
 maxRadius
-8
+10
 </>
 
 
 //pos=(x, y) speed=(x, y) mass=m radius=r
+660 540 -200 0 4e15 8
 <particles>
+
+404 500 0 0 2e10 4
 </particles>
